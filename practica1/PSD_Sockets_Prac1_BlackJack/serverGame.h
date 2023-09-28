@@ -99,3 +99,12 @@ unsigned int calculatePoints (tDeck *deck);
  * @return Randomly selected card from the game deck.
  */
 unsigned int getRandomCard (tDeck* deck);
+
+
+/** 
+ * Encapsulates the send of the different deck struct elements
+ * 
+ * @param deck Game deck
+ * @return void
+ */
+void sendDeck(tDeck* deck, int socket);
