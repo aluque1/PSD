@@ -9,6 +9,9 @@
 /** Action taken by the player to hit a card */
 #define PLAYER_HIT_CARD 1
 
+/** Max message length */
+#define MAX_MSG_LENGTH 256
+
 
 /**
  * Prints the received code.

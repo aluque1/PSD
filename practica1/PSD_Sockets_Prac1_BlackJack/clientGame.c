@@ -151,6 +151,7 @@ int main(int argc, char *argv[])
 	char *serverIP;					   /** Server IP */
 	unsigned int endOfGame;			   /** Flag to control the end of the game */
 	tString playerName;				   /** Name of the player */
+	int msgLength;					   /** Length of the message */
 	unsigned int code;				   /** Code */
 
 	// Check arguments!
@@ -166,4 +167,33 @@ int main(int argc, char *argv[])
 
 	// Get the port
 	port = atoi(argv[2]);
+
+	// Create socket and check
+	if((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		showError("ERROR while creating the socket");
+	
+	// Fill server address structure
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = inet_addr(serverIP);
+	server_address.sin_port = htons(port);
+
+	// Connect with server
+	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+		showError("ERROR while establishing connection");
+	
+	// Init and send the player name
+	memset(playerName, 0, STRING_LENGTH);
+	printf("Enter your name:");
+	fgets(playerName, STRING_LENGTH - 1, stdin);
+
+	// Send player name
+	msgLength = send(socketfd, playerName, strlen(playerName), 0);
+
+	// Check the number of bytes sent
+	if (msgLength < 0)
+		showError("ERROR while writing to the socket");
+	
+	// Show welcome message
+	printf("Welcome to the BlackJack game %s!\n", playerName);
 }

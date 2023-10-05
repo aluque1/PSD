@@ -8,6 +8,8 @@ void printSession(tSession *session);
 void initSession(tSession *session);
 unsigned int calculatePoints(tDeck *deck);
 unsigned int getRandomCard(tDeck *deck);
+int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[]);
+int acceptConnection(int socketfd);
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +23,7 @@ int main(int argc, char *argv[])
 	unsigned int clientLength;		   /** Length of client structure */
 	tThreadArgs *threadArgs;		   /** Thread parameters */
 	pthread_t threadID;				   /** Thread ID */
+	tSession session;				   /** Session structure */
 
 	// Seed
 	srand(time(0));
@@ -34,13 +37,55 @@ int main(int argc, char *argv[])
 	}
 }
 
-void prepareServerSocket(){
-	
+int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[])
+{
+	// Create socket
+	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		showError("ERROR while creating the socket");
+
+	// Fill server address structure
+	memset(&serverAddress, 0, sizeof(serverAddress));
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	port = atoi(argv[1]);
+
+	serverAddress.sin_port = htons(port);
+
+	// Bind
+	if (bind(socketfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+		showError("ERROR while binding");
+
+	// Listen
+	if (listen(socketfd, MAX_CONNECTIONS) < 0)
+		showError("ERROR while listening");
+
+	return socketfd;
+}
+
+/**
+ * Accept connection
+ */
+int acceptConnection(int socketfd)
+{
+	int clientSocket;
+	struct sockaddr_in clientAddress;
+	unsigned int clientAddressLength;
+
+	// Get length of client address
+	clientAddressLength = sizeof(clientAddress);
+
+	// Accept
+	if ((clientSocket = accept(socketfd, (struct sockaddr *)&clientAddress, &clientAddressLength)) < 0)
+		showError("Error while accepting connection");
+
+	printf("Connection established with client: %s\n", inet_ntoa(clientAddress.sin_addr));
+
+	return clientSocket;
 }
 
 tPlayer getNextPlayer(tPlayer currentPlayer)
 {
-
 	tPlayer next;
 
 	if (currentPlayer == player1)

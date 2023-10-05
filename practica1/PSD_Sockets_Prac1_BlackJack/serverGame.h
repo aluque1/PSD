@@ -18,6 +18,15 @@
 /** Code to represents an empty card (in the deck) */
 #define UNSET_CARD 100
 
+/** Max name length */
+#define MAX_NAME_LENGTH 20
+
+/** Max message length */
+#define MAX_MSG_LENGTH 256
+
+/** Max number of connections */
+#define MAX_CONNECTIONS 5
+
 /** Sockets of a game used by a thread in the server */
 typedef struct threadArgs{
 	int socketPlayer1;
@@ -108,3 +117,22 @@ unsigned int getRandomCard (tDeck* deck);
  * @return void
  */
 void sendDeck(tDeck* deck, int socket);
+
+/** 
+ * Encapsulates the preparation of the server socket, including the bind and listen
+ * 
+ * @param socketfd Socket descriptor
+ * @param serverAddress Server address structure
+ * @param port Port number
+ * @param argv Arguments
+ * @return Socket descriptor for the server
+ */
+int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[]);
+
+/** 
+ * Encapsulates the acceptation of a connection
+ * 
+ * @param socketfd Socket descriptor
+ * @return Socket descriptor for the accepted connection
+ */
+int acceptConnection(int socketfd);
