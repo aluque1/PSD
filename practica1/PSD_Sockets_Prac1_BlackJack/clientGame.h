@@ -12,25 +12,23 @@
 /** Max message length */
 #define MAX_MSG_LENGTH 256
 
-
 /**
  * Prints the received code.
  *
  * @param code Received code.
  */
-void showCode (unsigned int code);
+void showCode(unsigned int code);
 
 /**
  * Reads a bet entered by the player.
  *
  * @return A number that represents the bet for the current play.
  */
-unsigned int readBet ();
+unsigned int readBet();
 
 /**
  * Reads the action taken by the player (stand or hit).
  *
  * @return A number that represents the action taken by the player.
  */
-unsigned int readOption ();
-
+unsigned int readOption();

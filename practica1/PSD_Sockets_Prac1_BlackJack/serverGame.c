@@ -35,6 +35,30 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Usage:\n$>%s port\n", argv[0]);
 		exit(1);
 	}
+
+	// Get the port
+	port = atoi(argv[1]);
+
+	// Create a socket (also bind and listen)
+	socketfd = prepareServerSocket(socketfd, serverAddress, port, argv);
+
+	// TODO : remove this loop it is just for test
+	while (1)
+	{
+		// Accept connection from player 1
+		socketPlayer1 = acceptConnection(socketfd);
+
+		// Accept connection from player 2
+		socketPlayer2 = acceptConnection(socketfd);
+
+		// Allocate memory
+		if ((threadArgs = (tThreadArgs *)malloc(sizeof(tThreadArgs))) == NULL)
+			showError("Error while allocating memory");
+
+		// Set socket to the thread's parameter structure
+		threadArgs->socketPlayer1 = socketPlayer1;
+		threadArgs->socketPlayer2 = socketPlayer2;
+	}
 }
 
 int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[])
@@ -47,9 +71,6 @@ int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned
 	memset(&serverAddress, 0, sizeof(serverAddress));
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	port = atoi(argv[1]);
-
 	serverAddress.sin_port = htons(port);
 
 	// Bind

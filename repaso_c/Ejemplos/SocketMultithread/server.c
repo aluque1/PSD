@@ -113,8 +113,6 @@ void *threadProcessing(void *threadArgs){
 }
 
 
-
-
 int main(int argc, char *argv[]){
 
 	int serverSocket;

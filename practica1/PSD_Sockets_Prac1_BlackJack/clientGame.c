@@ -7,7 +7,6 @@ void showCode(unsigned int code)
 
 	if (DEBUG_CLIENT)
 	{
-
 		// Reset
 		memset(string, 0, STRING_LENGTH);
 
@@ -162,16 +161,16 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	// Get the server address
-	serverIP = argv[1];
-
 	// Get the port
 	port = atoi(argv[2]);
 
-	// Create socket and check
-	if((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+	// Create socket and check if it has been successfully created
+	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
 		showError("ERROR while creating the socket");
-	
+
+	// Get the server address
+	serverIP = argv[1];
+
 	// Fill server address structure
 	memset(&server_address, 0, sizeof(server_address));
 	server_address.sin_family = AF_INET;
@@ -181,19 +180,19 @@ int main(int argc, char *argv[])
 	// Connect with server
 	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
 		showError("ERROR while establishing connection");
-	
+
 	// Init and send the player name
+	printf("Enter your name: ");
 	memset(playerName, 0, STRING_LENGTH);
-	printf("Enter your name:");
 	fgets(playerName, STRING_LENGTH - 1, stdin);
 
-	// Send player name
+	// Send player name to the server side
 	msgLength = send(socketfd, playerName, strlen(playerName), 0);
 
 	// Check the number of bytes sent
 	if (msgLength < 0)
 		showError("ERROR while writing to the socket");
-	
+
 	// Show welcome message
 	printf("Welcome to the BlackJack game %s!\n", playerName);
 }
