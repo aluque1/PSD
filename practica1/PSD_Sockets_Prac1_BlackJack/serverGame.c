@@ -25,6 +25,8 @@ int main(int argc, char *argv[])
 	pthread_t threadID;				   /** Thread ID */
 	tSession session;				   /** Session structure */
 
+	tPlayer nextPlayer; /** Initial player */
+
 	// Seed
 	srand(time(0));
 
@@ -51,16 +53,44 @@ int main(int argc, char *argv[])
 		// Accept connection from player 2
 		socketPlayer2 = acceptConnection(socketfd);
 
+		// Recieve player 1 name 
+		if (recv(socketPlayer1, session.player1Name, sizeof(session.player1Name), 0) < 0)
+			showError("Error while receiving");
+		
+		// Recieve player 2 name
+		if (recv(socketPlayer2, session.player2Name, sizeof(session.player2Name), 0) < 0)
+			showError("Error while receiving");
+		
+
+		/* Para cuando tengamos threads
 		// Allocate memory
 		if ((threadArgs = (tThreadArgs *)malloc(sizeof(tThreadArgs))) == NULL)
 			showError("Error while allocating memory");
 
 		// Set socket to the thread's parameter structure
 		threadArgs->socketPlayer1 = socketPlayer1;
-		threadArgs->socketPlayer2 = socketPlayer2;
+		threadArgs->socketPlayer2 = socketPlayer2; 
+		*/
+
+		// Init session
+		initSession(&session);
+
+		printSession(&session);
+
+		nextPlayer = player1;
+
+		// Game loop
+		do
+		{
+			// Send TURN_BET & their stack to player 1
+			
+		} while (1);
 	}
 }
 
+/**
+ * Encapsulates the preparation of the server socket, including the bind and listen
+ */
 int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[])
 {
 	// Create socket
@@ -177,7 +207,6 @@ void initSession(tSession *session)
 
 unsigned int calculatePoints(tDeck *deck)
 {
-
 	unsigned int points;
 
 	// Init...

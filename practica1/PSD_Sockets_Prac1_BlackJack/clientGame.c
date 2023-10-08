@@ -71,7 +71,6 @@ unsigned int readBet()
 	// While player does not enter a correct bet...
 	do
 	{
-
 		// Init...
 		bzero(enteredMove, STRING_LENGTH);
 		isValid = TRUE;
@@ -194,5 +193,14 @@ int main(int argc, char *argv[])
 		showError("ERROR while writing to the socket");
 
 	// Show welcome message
-	printf("Welcome to the BlackJack game %s!\n", playerName);
+	printf("Welcome to the BlackJack game %s", playerName);
+
+	// Init end of game flag
+	endOfGame = FALSE;
+
+	while (!endOfGame)
+	{
+		/* code */
+	}
+	
 }

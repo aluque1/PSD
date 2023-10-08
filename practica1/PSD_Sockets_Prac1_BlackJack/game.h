@@ -68,7 +68,6 @@ typedef struct{
 	unsigned int numCards;
 }tDeck;
 
-
 /**
  * Function that shows an error message.
  *
