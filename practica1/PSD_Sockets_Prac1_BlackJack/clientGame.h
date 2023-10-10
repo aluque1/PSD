@@ -32,3 +32,9 @@ unsigned int readBet();
  * @return A number that represents the action taken by the player.
  */
 unsigned int readOption();
+
+/**
+ * recieves a message from the server
+ * @param socketfd socket descriptor
+ */
+void recieveString(int socketfd);

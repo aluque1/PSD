@@ -142,7 +142,6 @@ unsigned int readOption()
 
 int main(int argc, char *argv[])
 {
-
 	int socketfd;					   /** Socket descriptor */
 	unsigned int port;				   /** Port number (server) */
 	struct sockaddr_in server_address; /** Server address structure */
@@ -193,7 +192,7 @@ int main(int argc, char *argv[])
 		showError("ERROR while writing to the socket");
 
 	// Show welcome message
-	printf("Welcome to the BlackJack game %s", playerName);
+	recieveString(socketfd);
 
 	// Init end of game flag
 	endOfGame = FALSE;
@@ -202,5 +201,21 @@ int main(int argc, char *argv[])
 	{
 		/* code */
 	}
-	
+}
+
+void recieveString(int socketfd)
+{
+	int msgLength; /** Length of the message */
+	tString string;
+
+	// Init for reading incoming message
+	memset(string, 0, STRING_LENGTH);
+	msgLength = recv(socketfd, string, STRING_LENGTH - 1, 0);
+
+	// Check bytes read
+	if (msgLength < 0)
+		showError("ERROR while reading from the socket");
+
+	// Show the returned message
+	printf("%s\n", string);
 }

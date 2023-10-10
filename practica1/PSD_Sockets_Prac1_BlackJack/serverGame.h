@@ -37,7 +37,6 @@ typedef struct threadArgs
 /** Session represents a game between 2 players */
 typedef struct
 {
-
 	// Data for player 1
 	tString player1Name;
 	tDeck player1Deck;
@@ -60,6 +59,8 @@ typedef enum
 	player1,
 	player2
 } tPlayer;
+
+typedef
 
 /**
  * Calculates the next player.
@@ -131,7 +132,7 @@ void sendDeck(tDeck *deck, int socket);
  * @param argv Arguments
  * @return Socket descriptor for the server
  */
-int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[]);
+int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port);
 
 /**
  * Encapsulates the acceptation of a connection
@@ -140,3 +141,12 @@ int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned
  * @return Socket descriptor for the accepted connection
  */
 int acceptConnection(int socketfd);
+
+/**
+ * Encapsulates the send of a string
+ *
+ * @param socketfd Socket descriptor
+ * @param string String to be sent
+ * @return void
+ */
+void sendString(int socketfd, tString string);

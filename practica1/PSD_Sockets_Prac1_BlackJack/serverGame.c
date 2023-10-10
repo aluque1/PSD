@@ -1,31 +1,23 @@
 #include "serverGame.h"
 #include <pthread.h>
 
-tPlayer getNextPlayer(tPlayer currentPlayer);
-void initDeck(tDeck *deck);
-void clearDeck(tDeck *deck);
-void printSession(tSession *session);
-void initSession(tSession *session);
-unsigned int calculatePoints(tDeck *deck);
-unsigned int getRandomCard(tDeck *deck);
-int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[]);
-int acceptConnection(int socketfd);
-
 int main(int argc, char *argv[])
 {
-	int socketfd;					   /** Socket descriptor */
-	struct sockaddr_in serverAddress;  /** Server address structure */
-	unsigned int port;				   /** Listening port */
-	struct sockaddr_in player1Address; /** Client address structure for player 1 */
-	struct sockaddr_in player2Address; /** Client address structure for player 2 */
-	int socketPlayer1;				   /** Socket descriptor for player 1 */
-	int socketPlayer2;				   /** Socket descriptor for player 2 */
-	unsigned int clientLength;		   /** Length of client structure */
-	tThreadArgs *threadArgs;		   /** Thread parameters */
-	pthread_t threadID;				   /** Thread ID */
-	tSession session;				   /** Session structure */
+	int socketfd;					   	/** Socket descriptor */
+	struct sockaddr_in serverAddress;  	/** Server address structure */
+	unsigned int port;				   	/** Listening port */
+	struct sockaddr_in player1Address; 	/** Client address structure for player 1 */
+	struct sockaddr_in player2Address; 	/** Client address structure for player 2 */
+	int socketPlayer1;				   	/** Socket descriptor for player 1 */
+	int socketPlayer2;				   	/** Socket descriptor for player 2 */
+	unsigned int clientLength;		   	/** Length of client structure */
+	tThreadArgs *threadArgs;		   	/** Thread parameters */
+	pthread_t threadID;				   	/** Thread ID */
+	tSession session;				   	/** Session structure */
+	int msgLength;					   	/** Length of the message */
+	tString msg;				   	   	/** Message to be sent */
 
-	tPlayer nextPlayer; /** Initial player */
+	tPlayer nextPlayer; 				/** Initial player */
 
 	// Seed
 	srand(time(0));
@@ -42,7 +34,7 @@ int main(int argc, char *argv[])
 	port = atoi(argv[1]);
 
 	// Create a socket (also bind and listen)
-	socketfd = prepareServerSocket(socketfd, serverAddress, port, argv);
+	socketfd = prepareServerSocket(socketfd, serverAddress, port);
 
 	// TODO : remove this loop it is just for test
 	while (1)
@@ -57,10 +49,16 @@ int main(int argc, char *argv[])
 		if (recv(socketPlayer1, session.player1Name, sizeof(session.player1Name), 0) < 0)
 			showError("Error while receiving");
 		
+		// Send Welcome message to player 1
+		sendString(socketPlayer1, "Welcome");
+		
+
 		// Recieve player 2 name
 		if (recv(socketPlayer2, session.player2Name, sizeof(session.player2Name), 0) < 0)
 			showError("Error while receiving");
 		
+		// Send Welcome message to player 2
+		sendString(socketPlayer2, "Welcome");
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -77,21 +75,13 @@ int main(int argc, char *argv[])
 
 		printSession(&session);
 
-		nextPlayer = player1;
-
-		// Game loop
-		do
-		{
-			// Send TURN_BET & their stack to player 1
-			
-		} while (1);
 	}
 }
 
 /**
  * Encapsulates the preparation of the server socket, including the bind and listen
  */
-int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port, char *argv[])
+int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port)
 {
 	// Create socket
 	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
@@ -133,6 +123,19 @@ int acceptConnection(int socketfd)
 	printf("Connection established with client: %s\n", inet_ntoa(clientAddress.sin_addr));
 
 	return clientSocket;
+}
+
+/**
+ * Sensd tString to the client
+ */
+void sendString(int socketfd, tString string){
+	
+	int msgLength;
+	// Send the message
+	msgLength = send(socketfd, string, strlen(string), 0);
+	// Check the number of bytes sent
+	if (msgLength < 0)
+		showError("ERROR while writing to the socket");
 }
 
 tPlayer getNextPlayer(tPlayer currentPlayer)
