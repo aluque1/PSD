@@ -46,19 +46,17 @@ int main(int argc, char *argv[])
 		socketPlayer2 = acceptConnection(socketfd);
 
 		// Recieve player 1 name 
-		if (recv(socketPlayer1, session.player1Name, sizeof(session.player1Name), 0) < 0)
-			showError("Error while receiving");
+		receiveString(socketPlayer1, session.player1Name);
 		
 		// Send Welcome message to player 1
-		sendString(socketPlayer1, "Welcome");
 		
-
+		sendString(socketPlayer1, msg);
+		
 		// Recieve player 2 name
-		if (recv(socketPlayer2, session.player2Name, sizeof(session.player2Name), 0) < 0)
-			showError("Error while receiving");
-		
+		receiveString(socketPlayer2, session.player2Name);
+
 		// Send Welcome message to player 2
-		sendString(socketPlayer2, "Welcome");
+		sendString(socketPlayer2, msg);
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -125,18 +123,6 @@ int acceptConnection(int socketfd)
 	return clientSocket;
 }
 
-/**
- * Sensd tString to the client
- */
-void sendString(int socketfd, tString string){
-	
-	int msgLength;
-	// Send the message
-	msgLength = send(socketfd, string, strlen(string), 0);
-	// Check the number of bytes sent
-	if (msgLength < 0)
-		showError("ERROR while writing to the socket");
-}
 
 tPlayer getNextPlayer(tPlayer currentPlayer)
 {

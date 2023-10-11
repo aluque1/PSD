@@ -33,8 +33,3 @@ unsigned int readBet();
  */
 unsigned int readOption();
 
-/**
- * recieves a message from the server
- * @param socketfd socket descriptor
- */
-void recieveString(int socketfd);

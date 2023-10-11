@@ -113,3 +113,21 @@ void printFancyDeck (tDeck* deck);
  * @return Minimun value of the two given numbers.
  */
 unsigned int min (unsigned int a, unsigned int b);
+
+/**
+ * Sends a tString.
+ * 
+ * @param socketfd Socket descriptor.
+ * @param string tString to be sent.
+ */
+void sendString(int socketfd, tString string);
+
+/**
+ * Receives a tString.
+ * 
+ * @param socketfd Socket descriptor.
+ * @param string tString to be received.
+ * 
+ * @return pointer to the received string.
+ */
+int* receiveString(int socketfd, tString string);

@@ -141,12 +141,3 @@ int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned
  * @return Socket descriptor for the accepted connection
  */
 int acceptConnection(int socketfd);
-
-/**
- * Encapsulates the send of a string
- *
- * @param socketfd Socket descriptor
- * @param string String to be sent
- * @return void
- */
-void sendString(int socketfd, tString string);

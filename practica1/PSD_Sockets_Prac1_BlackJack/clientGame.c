@@ -185,14 +185,11 @@ int main(int argc, char *argv[])
 	fgets(playerName, STRING_LENGTH - 1, stdin);
 
 	// Send player name to the server side
-	msgLength = send(socketfd, playerName, strlen(playerName), 0);
+	sendString(socketfd, playerName);
 
-	// Check the number of bytes sent
-	if (msgLength < 0)
-		showError("ERROR while writing to the socket");
+	// recieve welcome message
+	receiveString(socketfd, playerName);
 
-	// Show welcome message
-	recieveString(socketfd);
 
 	// Init end of game flag
 	endOfGame = FALSE;
@@ -201,21 +198,4 @@ int main(int argc, char *argv[])
 	{
 		/* code */
 	}
-}
-
-void recieveString(int socketfd)
-{
-	int msgLength; /** Length of the message */
-	tString string;
-
-	// Init for reading incoming message
-	memset(string, 0, STRING_LENGTH);
-	msgLength = recv(socketfd, string, STRING_LENGTH - 1, 0);
-
-	// Check bytes read
-	if (msgLength < 0)
-		showError("ERROR while reading from the socket");
-
-	// Show the returned message
-	printf("%s\n", string);
 }
