@@ -123,17 +123,13 @@ int acceptConnection(int socketfd)
 	return clientSocket;
 }
 
-
 tPlayer getNextPlayer(tPlayer currentPlayer)
 {
-	tPlayer next;
-
 	if (currentPlayer == player1)
-		next = player2;
+		return player2;
 	else
-		next = player1;
+		return player1;
 
-	return next;
 }
 
 void initDeck(tDeck *deck)
