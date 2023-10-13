@@ -1,3 +1,8 @@
+#no extension files
+*
+!/**/
+!*.*
+
 # Prerequisites
 *.d
 
