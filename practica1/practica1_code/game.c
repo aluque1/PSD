@@ -120,23 +120,19 @@ unsigned int min(unsigned int a, unsigned int b)
 void sendString(int socketfd, tString string)
 {
 	size_t msgLength;
-	memset(string, 0, STRING_LENGTH);
 	msgLength = send(socketfd, string, strlen(string), 0);
 
-	if (msgLength < 0)
+	if (msgLength < strlen(string))
 		showError("ERROR while sending message");
 }
 
-int* receiveString(int socketfd, tString string)
+void receiveString(int socketfd, tString string)
 {
 	size_t msgLength;
+
 	memset(string, 0, STRING_LENGTH);
 	msgLength = recv(socketfd, string, STRING_LENGTH - 1, 0); // TODO puede que esto es lo que este mal
 
-	if (msgLength < 0)
+	if (msgLength < strlen(string))
 		showError("ERROR while receiving message");
-
-	//return pointer to the received string
-	printf("Received: %s\n", string);
-	return 1;
 }

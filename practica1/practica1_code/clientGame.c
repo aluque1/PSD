@@ -1,5 +1,69 @@
 #include "clientGame.h"
 
+int main(int argc, char *argv[])
+{
+	int socketfd;					   /** Socket descriptor */
+	unsigned int port;				   /** Port number (server) */
+	struct sockaddr_in server_address; /** Server address structure */
+	char *serverIP;					   /** Server IP */
+	unsigned int endOfGame;			   /** Flag to control the end of the game */
+	tString playerName;				   /** Name of the player */
+	int msgLength;					   /** Length of the message */
+	unsigned int code;				   /** Code */
+	tString msg;					   /** String buffer */
+
+	// Check arguments!
+	if (argc != 3)
+	{
+		fprintf(stderr, "ERROR wrong number of arguments\n");
+		fprintf(stderr, "Usage:\n$>%s serverIP port\n", argv[0]);
+		exit(0);
+	}
+
+	// Get the port
+	port = atoi(argv[2]);
+
+	// Create socket and check if it has been successfully created
+	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		showError("ERROR while creating the socket");
+
+	// Get the server address
+	serverIP = argv[1];
+
+	// Fill server address structure
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = inet_addr(serverIP);
+	server_address.sin_port = htons(port);
+
+	// Connect with server
+	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+		showError("ERROR while establishing connection");
+
+	// Init and send the player name
+	printf("Enter your name: ");
+	memset(playerName, 0, STRING_LENGTH);
+	scan(playerName);
+
+	// Send player name to the server side
+	sendString(socketfd, playerName);
+
+	// recieve welcome message
+	receiveString(socketfd, msg);
+
+	// Print welcome message
+	printf("%s%s!\n", msg, playerName);
+
+
+	// Init end of game flag
+	endOfGame = FALSE;
+
+	while (!endOfGame)
+	{
+		/* code */
+	}
+}
+
 void showCode(unsigned int code)
 {
 
@@ -140,62 +204,8 @@ unsigned int readOption()
 	return ((unsigned int)option);
 }
 
-int main(int argc, char *argv[])
+void scan(tString string)
 {
-	int socketfd;					   /** Socket descriptor */
-	unsigned int port;				   /** Port number (server) */
-	struct sockaddr_in server_address; /** Server address structure */
-	char *serverIP;					   /** Server IP */
-	unsigned int endOfGame;			   /** Flag to control the end of the game */
-	tString playerName;				   /** Name of the player */
-	int msgLength;					   /** Length of the message */
-	unsigned int code;				   /** Code */
-
-	// Check arguments!
-	if (argc != 3)
-	{
-		fprintf(stderr, "ERROR wrong number of arguments\n");
-		fprintf(stderr, "Usage:\n$>%s serverIP port\n", argv[0]);
-		exit(0);
-	}
-
-	// Get the port
-	port = atoi(argv[2]);
-
-	// Create socket and check if it has been successfully created
-	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
-		showError("ERROR while creating the socket");
-
-	// Get the server address
-	serverIP = argv[1];
-
-	// Fill server address structure
-	memset(&server_address, 0, sizeof(server_address));
-	server_address.sin_family = AF_INET;
-	server_address.sin_addr.s_addr = inet_addr(serverIP);
-	server_address.sin_port = htons(port);
-
-	// Connect with server
-	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
-		showError("ERROR while establishing connection");
-
-	// Init and send the player name
-	printf("Enter your name: ");
-	memset(playerName, 0, STRING_LENGTH);
-	fgets(playerName, STRING_LENGTH - 1, stdin);
-
-	// Send player name to the server side
-	sendString(socketfd, playerName);
-
-	// recieve welcome message
-	receiveString(socketfd, playerName);
-
-
-	// Init end of game flag
-	endOfGame = FALSE;
-
-	while (!endOfGame)
-	{
-		/* code */
-	}
+	fgets(string, STRING_LENGTH - 1, stdin);
+	string[strlen(string) - 1] = 0;
 }

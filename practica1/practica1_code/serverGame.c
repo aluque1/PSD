@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 	pthread_t threadID;				   	/** Thread ID */
 	tSession session;				   	/** Session structure */
 	int msgLength;					   	/** Length of the message */
-	tString msg;				   	   	/** Message to be sent */
+	tString msg;				   	   	/** String buffer */
 
 	tPlayer nextPlayer; 				/** Initial player */
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	port = atoi(argv[1]);
 
 	// Create a socket (also bind and listen)
-	socketfd = prepareServerSocket(socketfd, serverAddress, port);
+	socketfd = prepareServerSocket(serverAddress, port);
 
 	// TODO : remove this loop it is just for test
 	while (1)
@@ -42,21 +42,21 @@ int main(int argc, char *argv[])
 		// Accept connection from player 1
 		socketPlayer1 = acceptConnection(socketfd);
 
-		// Accept connection from player 2
-		socketPlayer2 = acceptConnection(socketfd);
-
-		// Recieve player 1 name 
+		// Recieve player 1 name
 		receiveString(socketPlayer1, session.player1Name);
-		
+
 		// Send Welcome message to player 1
-		
+		strcpy(msg, "Welcome to BlackJack, ");
 		sendString(socketPlayer1, msg);
+
+		// Accept connection from player 2
+		//socketPlayer2 = acceptConnection(socketfd);
 		
 		// Recieve player 2 name
-		receiveString(socketPlayer2, session.player2Name);
+		//strcpy(session.player2Name, receiveString(socketPlayer2));
 
 		// Send Welcome message to player 2
-		sendString(socketPlayer2, msg);
+		//sendString(socketPlayer2, msg);
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -79,8 +79,9 @@ int main(int argc, char *argv[])
 /**
  * Encapsulates the preparation of the server socket, including the bind and listen
  */
-int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port)
+int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port)
 {
+	int socketfd;
 	// Create socket
 	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
 		showError("ERROR while creating the socket");

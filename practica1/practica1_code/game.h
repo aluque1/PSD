@@ -130,4 +130,4 @@ void sendString(int socketfd, tString string);
  * 
  * @return pointer to the received string.
  */
-int* receiveString(int socketfd, tString string);
+void receiveString(int socketfd, tString string);

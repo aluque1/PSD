@@ -33,3 +33,9 @@ unsigned int readBet();
  */
 unsigned int readOption();
 
+/**
+ * Reads a string from the standard input.
+ *
+ * @param string String to be read.
+ */
+void scan(tString string);

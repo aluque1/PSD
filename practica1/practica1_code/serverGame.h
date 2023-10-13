@@ -60,8 +60,6 @@ typedef enum
 	player2
 } tPlayer;
 
-typedef
-
 /**
  * Calculates the next player.
  *
@@ -132,7 +130,7 @@ void sendDeck(tDeck *deck, int socket);
  * @param argv Arguments
  * @return Socket descriptor for the server
  */
-int prepareServerSocket(int socketfd, struct sockaddr_in serverAddress, unsigned int port);
+int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port);
 
 /**
  * Encapsulates the acceptation of a connection
