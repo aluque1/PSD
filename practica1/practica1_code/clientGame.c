@@ -6,10 +6,13 @@ int main(int argc, char *argv[])
 	unsigned int port;				   	/** Port number (server) */
 	struct sockaddr_in server_address; 	/** Server address structure */
 	char *serverIP;					   	/** Server IP */
+
 	unsigned int endOfGame;			   	/** Flag to control the end of the game */
 	tString playerName;				   	/** Name of the player */
-	unsigned int code;				   	/** Code */
 	tString msg;					   	/** String buffer */
+	tDeck deck;						   	/** Deck */
+	unsigned int code;				   	/** Code */
+
 
 	// Check arguments!
 	if (argc != 3)
@@ -42,7 +45,8 @@ int main(int argc, char *argv[])
 	// Init and send the player name
 	printf("Enter your name: ");
 	memset(playerName, 0, STRING_LENGTH);
-	scan(playerName);
+	fgets(playerName, STRING_LENGTH - 1, stdin);
+	playerName[strlen(playerName) - 1] = 0;
 
 	// Send player name to the server side
 	sendString(socketfd, playerName);
@@ -52,6 +56,10 @@ int main(int argc, char *argv[])
 
 	// Print welcome message
 	printf("%s%s!\n", msg, playerName);
+
+	receiveDeck(socketfd, &(deck));
+
+	printFancyDeck(&(deck));
 
 	// Init the end of game flag
 	endOfGame = FALSE;
@@ -163,8 +171,7 @@ unsigned int readBet()
 	return ((unsigned int)bet);
 }
 
-unsigned int readOption()
-{
+unsigned int readOption(){
 
 	int isValid, option = 0;
 	tString enteredMove;
@@ -204,10 +211,4 @@ unsigned int readOption()
 	printf("\n");
 
 	return ((unsigned int)option);
-}
-
-void scan(tString string)
-{
-	fgets(string, STRING_LENGTH - 1, stdin);
-	string[strlen(string) - 1] = 0;
 }

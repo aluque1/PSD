@@ -150,10 +150,34 @@ unsigned int receiveUnsignedInt(int socketfd)
 {
 	size_t msgLength;
 	unsigned int number; 
-	msgLength = recv(socketfd, number, sizeof(int), 0);
+	msgLength = recv(socketfd, &number, sizeof(int), 0);
 
 	if (msgLength < sizeof(int))
 		showError("ERROR while receiving message");
 
 	return number;
+}
+
+void sendDeck(int socketfd, tDeck *deck)
+{
+	size_t msgLength;
+	msgLength = send(socketfd, &(deck->numCards), sizeof(deck->numCards), 0);
+	if (msgLength < sizeof(deck->numCards))
+		showError("ERROR while sending number of cards");
+
+	msgLength = send(socketfd, &(deck->cards), sizeof(deck->cards) * deck->numCards, 0);
+	if (msgLength < sizeof(deck->cards) * deck->numCards)
+		showError("ERROR while sending cards");
+}
+
+void receiveDeck(int socketfd, tDeck *deck)
+{
+	size_t msgLength;
+	msgLength = recv(socketfd, &(deck->numCards), sizeof(deck->numCards), 0);
+	if (msgLength < sizeof(deck->numCards))
+		showError("ERROR while receiving number of cards");
+
+	msgLength = recv(socketfd, &(deck->cards), sizeof(deck->cards) * deck->numCards, 0);
+	if (msgLength < sizeof(deck->cards) * deck->numCards)
+		showError("ERROR while receiving cards");
 }

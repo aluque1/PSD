@@ -119,7 +119,7 @@ unsigned int getRandomCard(tDeck *deck);
  * @param deck Game deck
  * @return void
  */
-void sendDeck(tDeck *deck, int socket);
+void sendDeck(int socket, tDeck *deck);
 
 /**
  * Encapsulates the preparation of the server socket, including the bind and listen

@@ -34,8 +34,9 @@ unsigned int readBet();
 unsigned int readOption();
 
 /**
- * Reads a string from the standard input.
- *
- * @param string String to be read.
+ * Recieves a deck from the server.
+ * 
+ * @param socketfd Socket file descriptor.
+ * @param deck Deck to be received.
  */
-void scan(tString string);
+void receiveDeck(int socketfd, tDeck *deck);

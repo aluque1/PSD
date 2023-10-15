@@ -50,6 +50,18 @@ int main(int argc, char *argv[])
 		strcpy(msg, "Welcome to BlackJack, ");
 		sendString(socketPlayer1, msg);
 
+		// Init session
+		initSession(&session);
+
+		printSession(&session);
+
+		session.player1Deck.numCards = 2;
+		session.player1Deck.cards[0] = 0;
+		session.player1Deck.cards[1] = 1;
+
+		// Send player 1 deck
+		sendDeck(socketPlayer1, &(session.player1Deck));
+
 		// Accept connection from player 2
 		//socketPlayer2 = acceptConnection(socketfd);
 		
@@ -68,11 +80,6 @@ int main(int argc, char *argv[])
 		threadArgs->socketPlayer1 = socketPlayer1;
 		threadArgs->socketPlayer2 = socketPlayer2; 
 		*/
-
-		// Init session
-		initSession(&session);
-
-		printSession(&session);
 
 		// Send TURN_BET to player 1 and their stack
 		sendTurn(socketPlayer1, session, nextPlayer, TURN_BET);
@@ -136,7 +143,7 @@ int acceptConnection(int socketfd)
 
 void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn)
 {
-	sendUnsignedInt(socketfd, bet);
+	sendUnsignedInt(socketfd, turn);
 	if (player == player1)
 		sendUnsignedInt(socketfd, session.player1Stack);
 	else

@@ -145,4 +145,4 @@ void sendUnsignedInt(int socketfd, unsigned int number);
  * @param socketfd Socket descriptor.
  * @return int received.
  */
-int receiveUnsignedInt(int socketfd);
+unsigned int receiveUnsignedInt(int socketfd);
