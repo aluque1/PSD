@@ -142,7 +142,7 @@ void sendUnsignedInt(int socketfd, unsigned int number)
 	size_t msgLength;
 	msgLength = send(socketfd, &number, sizeof(int), 0);
 
-	if (msgLength < sizeof(int))
+	if (msgLength < sizeof(number))
 		showError("ERROR while sending message");
 }
 

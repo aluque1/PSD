@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
 	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
 		showError("ERROR while establishing connection");
 
+		
+
 	// Init and send the player name
 	printf("Enter your name: ");
 	memset(playerName, 0, STRING_LENGTH);
@@ -56,6 +58,8 @@ int main(int argc, char *argv[])
 
 	// Print welcome message
 	printf("%s%s!\n", msg, playerName);
+
+
 
 	// recieve code
 	code = receiveUnsignedInt(socketfd);
@@ -133,7 +137,6 @@ void showCode(unsigned int code)
 
 unsigned int readBet()
 {
-
 	int isValid, bet = 0;
 	tString enteredMove;
 

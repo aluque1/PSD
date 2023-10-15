@@ -37,13 +37,14 @@ int main(int argc, char *argv[])
 	// Create a socket (also bind and listen)
 	socketfd = prepareServerSocket(serverAddress, port);
 
+	// Accept connection from player 1
+	socketPlayer1 = acceptConnection(socketfd);
+
+	// Recieve player 1 name
+	receiveString(socketPlayer1, session.player1Name);
+
 	while (!gameEnd)
 	{
-		// Accept connection from player 1
-		socketPlayer1 = acceptConnection(socketfd);
-
-		// Recieve player 1 name
-		receiveString(socketPlayer1, session.player1Name);
 
 		// Send Welcome message to player 1
 		strcpy(msg, "Welcome to BlackJack, ");
@@ -69,11 +70,7 @@ int main(int argc, char *argv[])
 		// Init bet & turns
 
 		// Prepare bet player 1
-		currentTurn = TURN_BET;
-		sendUnsignedInt(socketfd, 0);
-		// sendUnsignedInt(socketfd, session.player1Stack);
-
-		// currentTurn = prepareBets(socketPlayer1, msg, currentTurn, session, player1);
+		currentTurn = prepareBets(socketPlayer1, msg, currentTurn, session, player1);
 
 		/* // Prepare bet player 2
 		currentTurn = prepareBets(socketPlayer2, msg, currentTurn, session, player2); */
@@ -90,29 +87,39 @@ int main(int argc, char *argv[])
 	}
 }
 
-unsigned int prepareBets(int socketfd, tString msg, unsigned int currentTurn, tSession session, tPlayer player)
+unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession session, tPlayer player)
 {
 	currentTurn = TURN_BET;
-	sendTurn(socketfd, session, player1, currentTurn);
-
-	// Send bet prompt to player
-	strcpy(msg, "Place your bet: ");
-	sendString(socketfd, msg);
-
+	unsigned int bet;
+	
 	while (currentTurn != TURN_BET_OK)
 	{
 		if (player == player1)
 		{
-			session.player1Bet = receiveUnsignedInt(socketfd);
+			sendTurn(playerSocket, session, player1, currentTurn);
+			session.player1Bet = receiveUnsignedInt(playerSocket);
+			currentTurn = checkBet(playerSocket, &session, player, &bet); // remove is for debug
+			if(currentTurn == TURN_BET_OK) session.player1Bet = bet;
 			printf("Player 1 bet: %d\n", session.player1Bet);
+			
+			if jugaodr es 1 prepareBets(playerSocket, currentTurn, session.player1Bet , session.player1Stack)
+			else prepareBets(playerSocket, currentTurn, session.player2Bet , session.player2Stack)
+
 		}
 		else
 		{
-			session.player2Bet = receiveUnsignedInt(socketfd);
-			printf("Player 2 bet: %d\n", session.player2Bet);
-		}
+			sendTurn(playerSocket, session, player2, currentTurn);
+			session.player2Bet = receiveUnsignedInt(playerSocket);
+			currentTurn = checkBet(playerSocket, &session, player, &bet);
+			if(currentTurn == TURN_BET_OK) session.player2Bet = bet;
+			printf("Player 2 bet: %d\n", session.player2Bet); 
 	}
 	return currentTurn;
+}
+
+void auxBet(int playerSocket, unsigned int currentTurn)
+{
+
 }
 
 void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn)
@@ -249,6 +256,26 @@ unsigned int calculatePoints(tDeck *deck)
 	}
 
 	return points;
+}
+
+unsigned int checkBet(int socketfd, tSession *session, tPlayer player, unsigned int bet)
+{
+	unsigned int bet;
+	short betOK = TURN_BET;
+
+	// Get bet
+	bet = receiveUnsignedInt(socketfd);
+
+	// Check bet
+	if (bet <= MAX_BET && bet > 0)
+	{
+		if (player == player1)
+			betOK = (session->player1Stack >= bet); // 1 == TURN_BET_OK
+		else
+			betOK = (session->player2Stack >= bet);
+	}
+
+	return betOK;
 }
 
 unsigned int getRandomCard(tDeck *deck)
