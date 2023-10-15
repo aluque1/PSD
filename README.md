@@ -1,10 +1,5 @@
 # PSD
 
-Repositorio donde estaran las soluciones de la asingatura de Programacion de Sistemas Distribuidos
+Repositorio con las soluciones de la asingatura de Programacion de Sistemas Distribuidos. Hecho junto con [Nacho](https://github.com/nachoski08)
 
------------------------------------
 
-Code done by: 
-
-https://github.com/aluque1
-https://github.com/Nachoski08
