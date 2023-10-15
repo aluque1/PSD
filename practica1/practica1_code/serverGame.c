@@ -3,22 +3,22 @@
 
 int main(int argc, char *argv[])
 {
-	int socketfd;					   	/** Socket descriptor */
-	struct sockaddr_in serverAddress;  	/** Server address structure */
-	unsigned int port;				   	/** Listening port */
-	struct sockaddr_in player1Address; 	/** Client address structure for player 1 */
-	struct sockaddr_in player2Address; 	/** Client address structure for player 2 */
-	int socketPlayer1;				   	/** Socket descriptor for player 1 */
-	int socketPlayer2;				   	/** Socket descriptor for player 2 */
-	unsigned int clientLength;		   	/** Length of client structure */
-	tThreadArgs *threadArgs;		   	/** Thread parameters */
-	pthread_t threadID;				   	/** Thread ID */
-	tSession session;				   	/** Session structure */
-	tString msg;				   	   	/** String buffer */
+	int socketfd;					   /** Socket descriptor */
+	struct sockaddr_in serverAddress;  /** Server address structure */
+	unsigned int port;				   /** Listening port */
+	struct sockaddr_in player1Address; /** Client address structure for player 1 */
+	struct sockaddr_in player2Address; /** Client address structure for player 2 */
+	int socketPlayer1;				   /** Socket descriptor for player 1 */
+	int socketPlayer2;				   /** Socket descriptor for player 2 */
+	unsigned int clientLength;		   /** Length of client structure */
+	tThreadArgs *threadArgs;		   /** Thread parameters */
+	pthread_t threadID;				   /** Thread ID */
+	tSession session;				   /** Session structure */
+	tString msg;					   /** String buffer */
 
-	int gameEnd = FALSE;				/** Flag to control the end of the game */
-	tPlayer nextPlayer = player1; 				/** Initial player */
-
+	int gameEnd = FALSE;		  /** Flag to control the end of the game */
+	tPlayer nextPlayer = player1; /** Initial player */
+	unsigned int currentTurn;	  /** Current turn */
 
 	// Seed
 	srand(time(0));
@@ -37,7 +37,6 @@ int main(int argc, char *argv[])
 	// Create a socket (also bind and listen)
 	socketfd = prepareServerSocket(serverAddress, port);
 
-	// TODO : remove this loop it is just for test
 	while (!gameEnd)
 	{
 		// Accept connection from player 1
@@ -50,26 +49,34 @@ int main(int argc, char *argv[])
 		strcpy(msg, "Welcome to BlackJack, ");
 		sendString(socketPlayer1, msg);
 
+		/*// Accept connection from player 2
+		socketPlayer2 = acceptConnection(socketfd);
+
+		 // Recieve player 2 name
+		receiveString(socketPlayer2, session.player2Name);
+
+		// Send Welcome message to player 2
+		strcpy(msg, "Welcome to BlackJack, ");
+
+		sendString(socketPlayer2, msg); */
+
 		// Init session
 		initSession(&session);
 
 		printSession(&session);
 
-		session.player1Deck.numCards = 2;
-		session.player1Deck.cards[0] = 0;
-		session.player1Deck.cards[1] = 1;
+		// ---------------------------- GAME START ----------------------------
+		// Init bet & turns
 
-		// Send player 1 deck
-		sendDeck(socketPlayer1, &(session.player1Deck));
+		// Prepare bet player 1
+		currentTurn = TURN_BET;
+		sendUnsignedInt(socketfd, 0);
+		// sendUnsignedInt(socketfd, session.player1Stack);
 
-		// Accept connection from player 2
-		//socketPlayer2 = acceptConnection(socketfd);
-		
-		// Recieve player 2 name
-		//strcpy(session.player2Name, receiveString(socketPlayer2));
+		// currentTurn = prepareBets(socketPlayer1, msg, currentTurn, session, player1);
 
-		// Send Welcome message to player 2
-		//sendString(socketPlayer2, msg);
+		/* // Prepare bet player 2
+		currentTurn = prepareBets(socketPlayer2, msg, currentTurn, session, player2); */
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -78,23 +85,45 @@ int main(int argc, char *argv[])
 
 		// Set socket to the thread's parameter structure
 		threadArgs->socketPlayer1 = socketPlayer1;
-		threadArgs->socketPlayer2 = socketPlayer2; 
+		threadArgs->socketPlayer2 = socketPlayer2;
 		*/
-
-		// Send TURN_BET to player 1 and their stack
-		sendTurn(socketPlayer1, session, nextPlayer, TURN_BET);
-
-		// Receive bet from player 1
-		session.player1Bet = receiveUnsignedInt(socketPlayer1);
-
-		printf("Player 1 bet: %d\n", session.player1Bet);
-
 	}
 }
 
-/**
- * Encapsulates the preparation of the server socket, including the bind and listen
- */
+unsigned int prepareBets(int socketfd, tString msg, unsigned int currentTurn, tSession session, tPlayer player)
+{
+	currentTurn = TURN_BET;
+	sendTurn(socketfd, session, player1, currentTurn);
+
+	// Send bet prompt to player
+	strcpy(msg, "Place your bet: ");
+	sendString(socketfd, msg);
+
+	while (currentTurn != TURN_BET_OK)
+	{
+		if (player == player1)
+		{
+			session.player1Bet = receiveUnsignedInt(socketfd);
+			printf("Player 1 bet: %d\n", session.player1Bet);
+		}
+		else
+		{
+			session.player2Bet = receiveUnsignedInt(socketfd);
+			printf("Player 2 bet: %d\n", session.player2Bet);
+		}
+	}
+	return currentTurn;
+}
+
+void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn)
+{
+	sendUnsignedInt(socketfd, turn);
+	if (player == player1)
+		sendUnsignedInt(socketfd, session.player1Stack);
+	else
+		sendUnsignedInt(socketfd, session.player2Stack);
+}
+
 int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port)
 {
 	int socketfd;
@@ -119,9 +148,6 @@ int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port)
 	return socketfd;
 }
 
-/**
- * Accept connection
- */
 int acceptConnection(int socketfd)
 {
 	int clientSocket;
@@ -140,23 +166,12 @@ int acceptConnection(int socketfd)
 	return clientSocket;
 }
 
-
-void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn)
-{
-	sendUnsignedInt(socketfd, turn);
-	if (player == player1)
-		sendUnsignedInt(socketfd, session.player1Stack);
-	else
-		sendUnsignedInt(socketfd, session.player2Stack);
-}
-
 tPlayer getNextPlayer(tPlayer currentPlayer)
 {
 	if (currentPlayer == player1)
 		return player2;
 	else
 		return player1;
-
 }
 
 void initDeck(tDeck *deck)

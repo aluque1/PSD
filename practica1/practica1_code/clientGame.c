@@ -2,17 +2,17 @@
 
 int main(int argc, char *argv[])
 {
-	int socketfd;					   	/** Socket descriptor */
-	unsigned int port;				   	/** Port number (server) */
-	struct sockaddr_in server_address; 	/** Server address structure */
-	char *serverIP;					   	/** Server IP */
+	int socketfd;					   /** Socket descriptor */
+	unsigned int port;				   /** Port number (server) */
+	struct sockaddr_in server_address; /** Server address structure */
+	char *serverIP;					   /** Server IP */
 
-	unsigned int endOfGame;			   	/** Flag to control the end of the game */
-	tString playerName;				   	/** Name of the player */
-	tString msg;					   	/** String buffer */
-	tDeck deck;						   	/** Deck */
-	unsigned int code;				   	/** Code */
-
+	unsigned int endOfGame; /** Flag to control the end of the game */
+	tString playerName;		/** Name of the player */
+	tString msg;			/** String buffer */
+	tDeck deck;				/** Deck */
+	unsigned int code;		/** Code */
+	unsigned int stack;		/** Stack */
 
 	// Check arguments!
 	if (argc != 3)
@@ -57,21 +57,17 @@ int main(int argc, char *argv[])
 	// Print welcome message
 	printf("%s%s!\n", msg, playerName);
 
-	receiveDeck(socketfd, &(deck));
-
-	printFancyDeck(&(deck));
-
+	// recieve code
+	code = receiveUnsignedInt(socketfd);
+	showCode(code);
 	// Init the end of game flag
 	endOfGame = FALSE;
 	while (!endOfGame)
 	{
-		// recieve code
-		code = receiveUnsignedInt(socketfd);
-		showCode(code);
 
-		// recieve stack NO SE QUE ES ESTO ME CAGOOO
+		/* stack = receiveUnsignedInt(socketfd);
+		printf("Stack: %d\n", stack); */
 	}
-	
 }
 
 void showCode(unsigned int code)
@@ -131,7 +127,6 @@ void showCode(unsigned int code)
 			strcpy(string, "UNKNOWN CODE");
 			break;
 		}
-
 		printf("Received:%s\n", string);
 	}
 }
@@ -171,7 +166,8 @@ unsigned int readBet()
 	return ((unsigned int)bet);
 }
 
-unsigned int readOption(){
+unsigned int readOption()
+{
 
 	int isValid, option = 0;
 	tString enteredMove;

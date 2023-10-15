@@ -148,3 +148,8 @@ int acceptConnection(int socketfd);
  * @return void
  */
 void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn);
+
+/**
+ * Encapsulates the preparation of the bets for the start of the game
+ */
+unsigned int prepareBets(int socketfd, tString msg, unsigned int currentTurn, tSession session, tPlayer player);
