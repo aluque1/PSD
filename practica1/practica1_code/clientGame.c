@@ -2,15 +2,14 @@
 
 int main(int argc, char *argv[])
 {
-	int socketfd;					   /** Socket descriptor */
-	unsigned int port;				   /** Port number (server) */
-	struct sockaddr_in server_address; /** Server address structure */
-	char *serverIP;					   /** Server IP */
-	unsigned int endOfGame;			   /** Flag to control the end of the game */
-	tString playerName;				   /** Name of the player */
-	int msgLength;					   /** Length of the message */
-	unsigned int code;				   /** Code */
-	tString msg;					   /** String buffer */
+	int socketfd;					   	/** Socket descriptor */
+	unsigned int port;				   	/** Port number (server) */
+	struct sockaddr_in server_address; 	/** Server address structure */
+	char *serverIP;					   	/** Server IP */
+	unsigned int endOfGame;			   	/** Flag to control the end of the game */
+	tString playerName;				   	/** Name of the player */
+	unsigned int code;				   	/** Code */
+	tString msg;					   	/** String buffer */
 
 	// Check arguments!
 	if (argc != 3)
@@ -54,14 +53,17 @@ int main(int argc, char *argv[])
 	// Print welcome message
 	printf("%s%s!\n", msg, playerName);
 
-
-	// Init end of game flag
+	// Init the end of game flag
 	endOfGame = FALSE;
-
 	while (!endOfGame)
 	{
-		/* code */
+		// recieve code
+		code = receiveUnsignedInt(socketfd);
+		showCode(code);
+
+		// recieve stack NO SE QUE ES ESTO ME CAGOOO
 	}
+	
 }
 
 void showCode(unsigned int code)

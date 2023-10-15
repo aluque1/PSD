@@ -139,3 +139,12 @@ int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port);
  * @return Socket descriptor for the accepted connection
  */
 int acceptConnection(int socketfd);
+
+/**
+ * Encapsulates the send of a turn
+ *
+ * @param socketfd Socket descriptor
+ * @param 
+ * @return void
+ */
+void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn);

@@ -131,8 +131,29 @@ void receiveString(int socketfd, tString string)
 	size_t msgLength;
 
 	memset(string, 0, STRING_LENGTH);
-	msgLength = recv(socketfd, string, STRING_LENGTH - 1, 0); // TODO puede que esto es lo que este mal
+	msgLength = recv(socketfd, string, STRING_LENGTH - 1, 0);
 
 	if (msgLength < strlen(string))
 		showError("ERROR while receiving message");
+}
+
+void sendUnsignedInt(int socketfd, unsigned int number)
+{
+	size_t msgLength;
+	msgLength = send(socketfd, &number, sizeof(int), 0);
+
+	if (msgLength < sizeof(int))
+		showError("ERROR while sending message");
+}
+
+unsigned int receiveUnsignedInt(int socketfd)
+{
+	size_t msgLength;
+	unsigned int number; 
+	msgLength = recv(socketfd, number, sizeof(int), 0);
+
+	if (msgLength < sizeof(int))
+		showError("ERROR while receiving message");
+
+	return number;
 }

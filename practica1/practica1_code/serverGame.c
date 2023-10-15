@@ -14,10 +14,11 @@ int main(int argc, char *argv[])
 	tThreadArgs *threadArgs;		   	/** Thread parameters */
 	pthread_t threadID;				   	/** Thread ID */
 	tSession session;				   	/** Session structure */
-	int msgLength;					   	/** Length of the message */
 	tString msg;				   	   	/** String buffer */
 
-	tPlayer nextPlayer; 				/** Initial player */
+	int gameEnd = FALSE;				/** Flag to control the end of the game */
+	tPlayer nextPlayer = player1; 				/** Initial player */
+
 
 	// Seed
 	srand(time(0));
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
 	socketfd = prepareServerSocket(serverAddress, port);
 
 	// TODO : remove this loop it is just for test
-	while (1)
+	while (!gameEnd)
 	{
 		// Accept connection from player 1
 		socketPlayer1 = acceptConnection(socketfd);
@@ -72,6 +73,14 @@ int main(int argc, char *argv[])
 		initSession(&session);
 
 		printSession(&session);
+
+		// Send TURN_BET to player 1 and their stack
+		sendTurn(socketPlayer1, session, nextPlayer, TURN_BET);
+
+		// Receive bet from player 1
+		session.player1Bet = receiveUnsignedInt(socketPlayer1);
+
+		printf("Player 1 bet: %d\n", session.player1Bet);
 
 	}
 }
@@ -122,6 +131,16 @@ int acceptConnection(int socketfd)
 	printf("Connection established with client: %s\n", inet_ntoa(clientAddress.sin_addr));
 
 	return clientSocket;
+}
+
+
+void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn)
+{
+	sendUnsignedInt(socketfd, bet);
+	if (player == player1)
+		sendUnsignedInt(socketfd, session.player1Stack);
+	else
+		sendUnsignedInt(socketfd, session.player2Stack);
 }
 
 tPlayer getNextPlayer(tPlayer currentPlayer)

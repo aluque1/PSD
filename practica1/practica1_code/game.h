@@ -128,6 +128,21 @@ void sendString(int socketfd, tString string);
  * @param socketfd Socket descriptor.
  * @param string tString to be received.
  * 
- * @return pointer to the received string.
  */
 void receiveString(int socketfd, tString string);
+
+/**
+ * Sends an int
+ * 
+ * @param socketfd Socket descriptor.
+ * @param number int to be sent.
+ */
+void sendUnsignedInt(int socketfd, unsigned int number);
+
+/**
+ * Receives an int
+ * 
+ * @param socketfd Socket descriptor.
+ * @return int received.
+ */
+int receiveUnsignedInt(int socketfd);
