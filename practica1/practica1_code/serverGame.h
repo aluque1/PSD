@@ -39,25 +39,16 @@ typedef struct{
 	tDeck deck;
 	unsigned int stack;
 	unsigned int bet;
+	int socket;
 }tDataPlayer;
 
 /** Session represents a game between 2 players */
 typedef struct
 {
 	// Data for player 1
-	tString player1Name;
-	tDeck player1Deck;
-	unsigned int player1Stack;
-	unsigned int player1Bet;
-
 	tDataPlayer player1;
 
 	// Data for player 2
-	tString player2Name;
-	tDeck player2Deck;
-	unsigned int player2Stack;
-	unsigned int player2Bet;
-
 	tDataPlayer player2;
 
 	// Deck for the current game
@@ -107,7 +98,7 @@ void printSession(tSession *session);
  *
  * @param session Session to be initialized.
  */
-void initSession(tSession *session, char *argv[], int socketfd, int socketPlayer1, int socketPlayer2, tString msg);
+void initSession(tSession *session, char *argv[], int socketfd, tString msg);
 
 /**
  * Calculates the current points of a given deck.
@@ -171,26 +162,13 @@ void sendTurn(int playerSocket, unsigned int stack, unsigned int turn);
  * 
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession session, tPlayer player);
+void prepareBets(tDataPlayer* dp);
 
 /**
  * Encapsulates the check of the bet
  * 
- * @param playerSocket Socket descriptor
  * @param stack Stack of the player
  * @param bet Bet of the player
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-unsigned int checkBet(int socketfd, unsigned int stack, unsigned int *bet);
-
-/**
- * Encapsulates the bet of the player
- *
- * @param playerSocket Socket descriptor
- * @param stack Stack of the player
- * @param currentTurn Current turn 
- * @param bet Bet of the player
- * 
- * @return The bet of the player
- */
-unsigned int betPlayer(int playerSocket, unsigned int stack, unsigned int *currentTurn, unsigned int bet);
+static inline short checkBet(unsigned int stack, unsigned int bet);

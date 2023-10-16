@@ -24,7 +24,7 @@ void showCode(unsigned int code);
  *
  * @return A number that represents the bet for the current play.
  */
-unsigned int readBet();
+unsigned int readBet(unsigned int stack);
 
 /**
  * Reads the action taken by the player (stand or hit).

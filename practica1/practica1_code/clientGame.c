@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 	tDeck deck;				/** Deck */
 	unsigned int code;		/** Code */
 	unsigned int bet;		/** Bet */
+	unsigned int stack;		/** Stack */
 
 	// Check arguments!
 	if (argc != 3)
@@ -64,8 +65,9 @@ int main(int argc, char *argv[])
 		do
 		{
 			code = receiveUnsignedInt(socketfd);
+			stack = receiveUnsignedInt(socketfd);
 			showCode(code);
-			sendUnsignedInt(socketfd, readBet());
+			sendUnsignedInt(socketfd, readBet(stack));
 		} while (code == TURN_BET);
 		/* stack = receiveUnsignedInt(socketfd);
 		printf("Stack: %d\n", stack); */
@@ -133,7 +135,7 @@ void showCode(unsigned int code)
 	}
 }
 
-unsigned int readBet()
+unsigned int readBet(unsigned int stack)
 {
 	int isValid, bet = 0;
 	tString enteredMove;
@@ -145,6 +147,7 @@ unsigned int readBet()
 		bzero(enteredMove, STRING_LENGTH);
 		isValid = TRUE;
 
+		printf("\nYour stack is %d\n", stack);
 		printf("Enter a bet:");
 		fgets(enteredMove, STRING_LENGTH - 1, stdin);
 		enteredMove[strlen(enteredMove) - 1] = 0;
