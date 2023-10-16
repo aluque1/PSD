@@ -5,7 +5,6 @@ int main(int argc, char *argv[])
 {
 	int socketfd;					   /** Socket descriptor */
 	struct sockaddr_in serverAddress;  /** Server address structure */
-	unsigned int port;				   /** Listening port */
 	struct sockaddr_in player1Address; /** Client address structure for player 1 */
 	struct sockaddr_in player2Address; /** Client address structure for player 2 */
 	int socketPlayer1;				   /** Socket descriptor for player 1 */
@@ -15,6 +14,8 @@ int main(int argc, char *argv[])
 	pthread_t threadID;				   /** Thread ID */
 	tSession session;				   /** Session structure */
 	tString msg;					   /** String buffer */
+	tDataPlayer* jugA;				   /** Data player A */
+	tDataPlayer* jugB;				   /** Data player B */
 
 	int gameEnd = FALSE;		  /** Flag to control the end of the game */
 	tPlayer nextPlayer = player1; /** Initial player */
@@ -31,38 +32,16 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	// Get the port
-	port = atoi(argv[1]);
-
 	// Create a socket (also bind and listen)
-	socketfd = prepareServerSocket(serverAddress, port);
+	socketfd = prepareServerSocket(serverAddress, atoi(argv[1]));
 
-	// Accept connection from player 1
-	socketPlayer1 = acceptConnection(socketfd);
-
-	// Recieve player 1 name
-	receiveString(socketPlayer1, session.player1Name);
-
-	// Accept connection from player 2
-	socketPlayer2 = acceptConnection(socketfd);
-
-	// Recieve player 2 name
-	receiveString(socketPlayer2, session.player2Name);
+	// Init session
+	initSession(&session, argv, socketfd, &socketPlayer1, &socketPlayer2, msg);
 
 	while (!gameEnd)
 	{
-
-		// Send Welcome message to player 1
-		strcpy(msg, "Welcome to BlackJack, ");
-		sendString(socketPlayer1, msg);
-
-		// Send Welcome message to player 2
-		strcpy(msg, "Welcome to BlackJack, ");
-		sendString(socketPlayer2, msg);
-
-		// Init session
-		initSession(&session);
-
+		clearDeck(&(session.player1Deck));
+		clearDeck(&(session.player2Deck));
 		printSession(&session);
 
 		// ---------------------------- GAME START ----------------------------
@@ -89,7 +68,6 @@ int main(int argc, char *argv[])
 unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession session, tPlayer player)
 {
 	currentTurn = TURN_BET;
-	unsigned int bet;
 
 	while (currentTurn != TURN_BET_OK)
 	{
@@ -99,28 +77,26 @@ unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession se
 		*/
 		if (player == player1)
 		{
-			bet = betPlayer(playerSocket, session.player1Stack, &currentTurn, session.player1Bet);
+			session.player1Bet = betPlayer(playerSocket, session.player1Stack, &currentTurn, session.player1Bet);
 		}
 		else
 		{
-			bet = betPlayer(playerSocket, session.player2Stack, &currentTurn, session.player2Bet);
+			session.player2Bet = betPlayer(playerSocket, session.player2Stack, &currentTurn, session.player2Bet);
 		}
-		return currentTurn;
 	}
+	return currentTurn;
 }
 
-// TODO ESTO CREO QUE ESTA MAL -------------------------------------------------------
 unsigned int betPlayer(int playerSocket, unsigned int stack, unsigned int *currentTurn, unsigned int bet)
 {
-	int localBet = 0;
-	int finalBet = 0;
+	unsigned int localBet = 0;
+	unsigned int finalBet = 0;
 
 	sendTurn(playerSocket, stack, *currentTurn);
-	localBet = receiveUnsignedInt(playerSocket);
-	*currentTurn = checkBet(playerSocket, stack);
-	if (currentTurn == TURN_BET_OK)
+	*currentTurn = checkBet(playerSocket, stack, &localBet);
+	if (*currentTurn == TURN_BET_OK)
 		finalBet = localBet;
-	printf("Player 2 bet: %d\n", finalBet); // for debug TODO REMOVE
+	printf("Player bet: %d\n", finalBet); // for debug TODO REMOVE
 
 	return finalBet;
 }
@@ -225,8 +201,27 @@ void printSession(tSession *session)
 	}
 }
 
-void initSession(tSession *session)
+inline void initSession(tSession *session, char *argv[], int socketfd, int socketPlayer1, int socketPlayer2, tString msg)
 {
+	// Accept connection from player 1
+	socketPlayer1 = acceptConnection(socketfd);
+
+	// Accept connection from player 2
+	socketPlayer2 = acceptConnection(socketfd);
+
+	// Recieve player 1 name
+	receiveString(socketPlayer1, session->player1Name);
+
+	// Recieve player 2 name
+	receiveString(socketPlayer2, session->player2Name);
+
+	// Send Welcome message to player 1
+	strcpy(msg, "Welcome to BlackJack, ");
+	sendString(socketPlayer1, msg);
+
+	// Send Welcome message to player 2
+	strcpy(msg, "Welcome to BlackJack, ");
+	sendString(socketPlayer2, msg);
 
 	clearDeck(&(session->player1Deck));
 	session->player1Bet = 0;
@@ -258,17 +253,15 @@ unsigned int calculatePoints(tDeck *deck)
 	return points;
 }
 
-unsigned int checkBet(int socketfd, unsigned int stack)
+unsigned int checkBet(int socketfd, unsigned int stack, unsigned int *bet)
 {
-	unsigned int bet;
 	short betOK = TURN_BET;
-
 	// Get bet
-	bet = receiveUnsignedInt(socketfd);
+	*bet = receiveUnsignedInt(socketfd);
 
 	// Check bet
-	if (bet <= MAX_BET && bet > 0)
-		betOK = (stack >= bet); // 1 == TURN_BET_OK
+	if (*bet <= MAX_BET && bet > 0)
+		betOK = (stack >= *bet); // 1 == TURN_BET_OK
 
 	return betOK;
 }

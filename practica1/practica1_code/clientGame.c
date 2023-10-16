@@ -61,16 +61,12 @@ int main(int argc, char *argv[])
 	endOfGame = FALSE;
 	while (!endOfGame)
 	{
-		// recieve code
-		code = receiveUnsignedInt(socketfd);
-		showCode(code);
-
-		if (code == TURN_BET)
+		do
 		{
-			printf("Enter a bet:");
-			scanf("%d", &bet);
-			sendUnsignedInt(socketfd, bet);
-		}
+			code = receiveUnsignedInt(socketfd);
+			showCode(code);
+			sendUnsignedInt(socketfd, readBet());
+		} while (code == TURN_BET);
 		/* stack = receiveUnsignedInt(socketfd);
 		printf("Stack: %d\n", stack); */
 	}

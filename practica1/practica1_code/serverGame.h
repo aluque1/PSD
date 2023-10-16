@@ -34,6 +34,13 @@ typedef struct threadArgs
 	int socketPlayer2;
 } tThreadArgs;
 
+typedef struct{
+	tString name;
+	tDeck deck;
+	unsigned int stack;
+	unsigned int bet;
+}tDataPlayer;
+
 /** Session represents a game between 2 players */
 typedef struct
 {
@@ -43,11 +50,15 @@ typedef struct
 	unsigned int player1Stack;
 	unsigned int player1Bet;
 
+	tDataPlayer player1;
+
 	// Data for player 2
 	tString player2Name;
 	tDeck player2Deck;
 	unsigned int player2Stack;
 	unsigned int player2Bet;
+
+	tDataPlayer player2;
 
 	// Deck for the current game
 	tDeck gameDeck;
@@ -96,7 +107,7 @@ void printSession(tSession *session);
  *
  * @param session Session to be initialized.
  */
-void initSession(tSession *session);
+void initSession(tSession *session, char *argv[], int socketfd, int socketPlayer1, int socketPlayer2, tString msg);
 
 /**
  * Calculates the current points of a given deck.
@@ -167,9 +178,10 @@ unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession se
  * 
  * @param playerSocket Socket descriptor
  * @param stack Stack of the player
+ * @param bet Bet of the player
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-unsigned int checkBet(int playerSocket, unsigned int stack);
+unsigned int checkBet(int socketfd, unsigned int stack, unsigned int *bet);
 
 /**
  * Encapsulates the bet of the player
