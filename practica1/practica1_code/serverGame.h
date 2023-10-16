@@ -172,3 +172,7 @@ void prepareBets(tDataPlayer* dp);
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
 static inline short checkBet(unsigned int stack, unsigned int bet);
+
+void gambling(tDataPlayer* dp, tDataPlayer* dp2);
+
+short checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2);

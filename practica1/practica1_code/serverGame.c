@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 	tDataPlayer* playerA;				   /** Data player A */
 	tDataPlayer* playerB;				   /** Data player B */
 
-	int gameEnd = FALSE;		  /** Flag to control the end of the game */
+	short gameEnd = FALSE;		  /** Flag to control the end of the game */
 	tPlayer nextPlayer = player1; /** Initial player */
 	unsigned int currentTurn;	  /** Current turn */
 
@@ -47,11 +47,16 @@ int main(int argc, char *argv[])
 		// ---------------------------- GAME START ----------------------------
 		// Init bet & turns
 
-		// Prepare bet player A
+		// Prepare bets for player A & B
 		prepareBets(playerA);
-
-		// Prepare bet player B
 		prepareBets(playerB);
+
+		gambling(playerA, playerB);
+		gambling(playerB, playerA);
+
+		gameEnd = checkGameEnd(playerA, playerB);
+
+		if (!gameEnd); //getNextPlayer();
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -84,6 +89,17 @@ void prepareBets(tDataPlayer* dp)
 static inline short checkBet(unsigned int stack, unsigned int bet)
 {
 	return (bet <= MAX_BET && bet > 0 && stack >= bet);
+}
+
+void gambling(tDataPlayer* dp, tDataPlayer* dp2)
+{
+
+}
+
+//TODO to complete
+short checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2)
+{
+	return (dp->stack == 0 || dp2->stack == 0);
 }
 
 void sendTurn(int playerSocket, unsigned int stack, unsigned int turn)
