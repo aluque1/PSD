@@ -40,3 +40,29 @@ unsigned int readOption();
  * @param deck Deck to be received.
  */
 void receiveDeck(int socketfd, tDeck *deck);
+
+/**
+ * Recieves a turn from the server.
+ * 
+ * @param socketfd Socket file descriptor.
+ * @param turn Turn to be received.
+ * @param points Points to be received.
+ * @param deck Deck to be received.
+ */
+void receiveTurn(int socketfd, unsigned int *turn, unsigned int *points, tDeck *deck);
+
+/**
+ * Plays a turn.
+ * 
+ * @param socketfd Socket file descriptor.
+ * @param code Code to be sent.
+ */
+void playTurn(int socketfd);
+
+/**
+ * Prepares the client socket.
+ * 
+ * @param argv Arguments.
+ * @return Socket file descriptor.
+ */
+int prepareClientSocket(char *argv[]);

@@ -64,12 +64,12 @@ typedef enum
 
 
 /**
- * Calculates the next player.
+ * Swaps the order of the players.
  *
- * @param currentPlayer The current player.
- * @return The next player to make a move.
+ * @param dp Player 1.
+ * @param dp2 Player 2.
  */
-tPlayer getNextPlayer(tPlayer currentPlayer);
+void getNextPlayer(tDataPlayer* dp, tDataPlayer* dp2);
 
 /**
  * Inits the game deck with all the cards.
@@ -98,7 +98,14 @@ void printSession(tSession *session);
  *
  * @param session Session to be initialized.
  */
-void initSession(tSession *session, char *argv[], int socketfd, tString msg);
+static inline void initSession(tSession *session, char *argv[], int socketfd, tString msg);
+
+/**
+ * Resets a session.
+ *
+ * @param session Session to be reseted.
+ */
+static inline void resetPlay(tSession *session);
 
 /**
  * Calculates the current points of a given deck.
@@ -115,6 +122,14 @@ unsigned int calculatePoints(tDeck *deck);
  * @return Randomly selected card from the game deck.
  */
 unsigned int getRandomCard(tDeck *deck);
+
+/**
+ * Inserts a card in a deck.
+ *
+ * @param deck Deck where the card will be inserted.
+ * @param card Card to be inserted.
+ */
+void insertCard(tDeck *deck, unsigned int card);
 
 /**
  * Encapsulates the send of the different deck struct elements
@@ -147,10 +162,12 @@ int acceptConnection(int socketfd);
  * Encapsulates the send of a turn
  *
  * @param playerSocket Socket descriptor
- * @param 
+ * @param turn Turn to be sent
+ * @param points Points to be sent
+ * @param deck Deck to be sent
  * @return void
  */
-void sendTurn(int playerSocket, unsigned int stack, unsigned int turn);
+void sendTurn(int playerSocket, unsigned int turn, unsigned int points, tDeck *deck);
 
 /**
  * Encapsulates the preparation of the bets for the start of the game
@@ -171,8 +188,8 @@ void prepareBets(tDataPlayer* dp);
  * @param bet Bet of the player
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-static inline short checkBet(unsigned int stack, unsigned int bet);
+static inline unsigned int checkBet(unsigned int stack, unsigned int bet);
 
-void gambling(tDataPlayer* dp, tDataPlayer* dp2);
+void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck);
 
-short checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2);
+unsigned int checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2);
