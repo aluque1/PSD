@@ -144,13 +144,41 @@ int acceptConnection(int socketfd);
 /**
  * Encapsulates the send of a turn
  *
- * @param socketfd Socket descriptor
+ * @param playerSocket Socket descriptor
  * @param 
  * @return void
  */
-void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn);
+void sendTurn(int playerSocket, unsigned int stack, unsigned int turn);
 
 /**
  * Encapsulates the preparation of the bets for the start of the game
+ * 
+ * @param playerSocket Socket descriptor
+ * @param currentTurn Current turn
+ * @param session Session structure
+ * @param player Player
+ * 
+ * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-unsigned int prepareBets(int socketfd, unsigned int currentTurn, tSession session, tPlayer player);
+unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession session, tPlayer player);
+
+/**
+ * Encapsulates the check of the bet
+ * 
+ * @param playerSocket Socket descriptor
+ * @param stack Stack of the player
+ * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
+ */
+unsigned int checkBet(int playerSocket, unsigned int stack);
+
+/**
+ * Encapsulates the bet of the player
+ *
+ * @param playerSocket Socket descriptor
+ * @param stack Stack of the player
+ * @param currentTurn Current turn 
+ * @param bet Bet of the player
+ * 
+ * @return The bet of the player
+ */
+unsigned int betPlayer(int playerSocket, unsigned int stack, unsigned int *currentTurn, unsigned int bet);

@@ -43,6 +43,12 @@ int main(int argc, char *argv[])
 	// Recieve player 1 name
 	receiveString(socketPlayer1, session.player1Name);
 
+	// Accept connection from player 2
+	socketPlayer2 = acceptConnection(socketfd);
+
+	// Recieve player 2 name
+	receiveString(socketPlayer2, session.player2Name);
+
 	while (!gameEnd)
 	{
 
@@ -50,16 +56,9 @@ int main(int argc, char *argv[])
 		strcpy(msg, "Welcome to BlackJack, ");
 		sendString(socketPlayer1, msg);
 
-		/*// Accept connection from player 2
-		socketPlayer2 = acceptConnection(socketfd);
-
-		 // Recieve player 2 name
-		receiveString(socketPlayer2, session.player2Name);
-
 		// Send Welcome message to player 2
 		strcpy(msg, "Welcome to BlackJack, ");
-
-		sendString(socketPlayer2, msg); */
+		sendString(socketPlayer2, msg);
 
 		// Init session
 		initSession(&session);
@@ -70,10 +69,10 @@ int main(int argc, char *argv[])
 		// Init bet & turns
 
 		// Prepare bet player 1
-		currentTurn = prepareBets(socketPlayer1, msg, currentTurn, session, player1);
+		currentTurn = prepareBets(socketPlayer1, currentTurn, session, player1);
 
-		/* // Prepare bet player 2
-		currentTurn = prepareBets(socketPlayer2, msg, currentTurn, session, player2); */
+		// Prepare bet player 2
+		currentTurn = prepareBets(socketPlayer2, currentTurn, session, player2);
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -91,44 +90,45 @@ unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession se
 {
 	currentTurn = TURN_BET;
 	unsigned int bet;
-	
+
 	while (currentTurn != TURN_BET_OK)
 	{
-		if (player == player1)
-		{
-			sendTurn(playerSocket, session, player1, currentTurn);
-			session.player1Bet = receiveUnsignedInt(playerSocket);
-			currentTurn = checkBet(playerSocket, &session, player, &bet); // remove is for debug
-			if(currentTurn == TURN_BET_OK) session.player1Bet = bet;
-			printf("Player 1 bet: %d\n", session.player1Bet);
-			
+		/*
 			if jugaodr es 1 prepareBets(playerSocket, currentTurn, session.player1Bet , session.player1Stack)
 			else prepareBets(playerSocket, currentTurn, session.player2Bet , session.player2Stack)
-
+		*/
+		if (player == player1)
+		{
+			bet = betPlayer(playerSocket, session.player1Stack, &currentTurn, session.player1Bet);
 		}
 		else
 		{
-			sendTurn(playerSocket, session, player2, currentTurn);
-			session.player2Bet = receiveUnsignedInt(playerSocket);
-			currentTurn = checkBet(playerSocket, &session, player, &bet);
-			if(currentTurn == TURN_BET_OK) session.player2Bet = bet;
-			printf("Player 2 bet: %d\n", session.player2Bet); 
+			bet = betPlayer(playerSocket, session.player2Stack, &currentTurn, session.player2Bet);
+		}
+		return currentTurn;
 	}
-	return currentTurn;
 }
 
-void auxBet(int playerSocket, unsigned int currentTurn)
+// TODO ESTO CREO QUE ESTA MAL -------------------------------------------------------
+unsigned int betPlayer(int playerSocket, unsigned int stack, unsigned int *currentTurn, unsigned int bet)
 {
+	int localBet = 0;
+	int finalBet = 0;
 
+	sendTurn(playerSocket, stack, *currentTurn);
+	localBet = receiveUnsignedInt(playerSocket);
+	*currentTurn = checkBet(playerSocket, stack);
+	if (currentTurn == TURN_BET_OK)
+		finalBet = localBet;
+	printf("Player 2 bet: %d\n", finalBet); // for debug TODO REMOVE
+
+	return finalBet;
 }
 
-void sendTurn(int socketfd, tSession session, tPlayer player, unsigned int turn)
+void sendTurn(int playerSocket, unsigned int stack, unsigned int turn)
 {
-	sendUnsignedInt(socketfd, turn);
-	if (player == player1)
-		sendUnsignedInt(socketfd, session.player1Stack);
-	else
-		sendUnsignedInt(socketfd, session.player2Stack);
+	sendUnsignedInt(playerSocket, turn);
+	sendUnsignedInt(playerSocket, stack);
 }
 
 int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port)
@@ -258,7 +258,7 @@ unsigned int calculatePoints(tDeck *deck)
 	return points;
 }
 
-unsigned int checkBet(int socketfd, tSession *session, tPlayer player, unsigned int bet)
+unsigned int checkBet(int socketfd, unsigned int stack)
 {
 	unsigned int bet;
 	short betOK = TURN_BET;
@@ -268,12 +268,7 @@ unsigned int checkBet(int socketfd, tSession *session, tPlayer player, unsigned 
 
 	// Check bet
 	if (bet <= MAX_BET && bet > 0)
-	{
-		if (player == player1)
-			betOK = (session->player1Stack >= bet); // 1 == TURN_BET_OK
-		else
-			betOK = (session->player2Stack >= bet);
-	}
+		betOK = (stack >= bet); // 1 == TURN_BET_OK
 
 	return betOK;
 }

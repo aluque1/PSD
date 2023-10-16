@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	tString msg;			/** String buffer */
 	tDeck deck;				/** Deck */
 	unsigned int code;		/** Code */
-	unsigned int stack;		/** Stack */
+	unsigned int bet;		/** Bet */
 
 	// Check arguments!
 	if (argc != 3)
@@ -42,8 +42,6 @@ int main(int argc, char *argv[])
 	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
 		showError("ERROR while establishing connection");
 
-		
-
 	// Init and send the player name
 	printf("Enter your name: ");
 	memset(playerName, 0, STRING_LENGTH);
@@ -59,16 +57,20 @@ int main(int argc, char *argv[])
 	// Print welcome message
 	printf("%s%s!\n", msg, playerName);
 
-
-
-	// recieve code
-	code = receiveUnsignedInt(socketfd);
-	showCode(code);
 	// Init the end of game flag
 	endOfGame = FALSE;
 	while (!endOfGame)
 	{
+		// recieve code
+		code = receiveUnsignedInt(socketfd);
+		showCode(code);
 
+		if (code == TURN_BET)
+		{
+			printf("Enter a bet:");
+			scanf("%d", &bet);
+			sendUnsignedInt(socketfd, bet);
+		}
 		/* stack = receiveUnsignedInt(socketfd);
 		printf("Stack: %d\n", stack); */
 	}
