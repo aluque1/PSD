@@ -118,7 +118,7 @@ void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck)
 			points = calculatePoints(&(dp->deck));
 			turn = (points > 21) ? TURN_PLAY_OUT : TURN_PLAY;
 			sendTurn(dp->socket, turn, points, &(dp->deck));
-			sendTurn(dp2->socket, turn, points, &(dp->deck));
+			sendTurn(dp2->socket, TURN_PLAY_WAIT, points, &(dp->deck));
 		}
 	}while (code != TURN_PLAY_STAND && turn != TURN_PLAY_OUT);
 

@@ -91,7 +91,7 @@ void playTurn(int socketfd)
 		}
 		receiveTurn(socketfd, &currentTurn, &points, &deck);
 		
-	}while(currentTurn == TURN_PLAY);
+	}while (currentTurn == TURN_PLAY);
 }
 
 void showCode(unsigned int code)
