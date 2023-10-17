@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	socketfd = prepareServerSocket(serverAddress, atoi(argv[1]));
 
 	// Init session
-	initSession(&session, argv, socketfd, msg);
+	welcomePlayers(&session, argv, socketfd, msg);
 	playerA = &(session.player1);
 	playerB = &(session.player2);
 
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 		// ---------------------------- GAME START ----------------------------
 
 		// Reset play
-		resetPlay(&session);
+		initSession(&session);
 		printSession(&session);
 
 		// Init bet & turns
@@ -111,6 +111,7 @@ void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck)
 	do
 	{
 		code = receiveUnsignedInt(dp->socket);
+		code += 3;
 		if (code == TURN_PLAY_HIT)
 		{
 			insertCard(&(dp->deck), getRandomCard(gameDeck));
@@ -121,8 +122,8 @@ void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck)
 		}
 	}while (code != TURN_PLAY_STAND && turn != TURN_PLAY_OUT);
 
-	sendUnsignedInt(dp->socket, TURN_PLAY_WAIT);
-	sendUnsignedInt(dp2->socket, TURN_PLAY_RIVAL_DONE);
+	sendTurn(dp->socket, TURN_PLAY_WAIT, calculatePoints(&(dp->deck)), &(dp->deck));
+	sendTurn(dp2->socket, TURN_PLAY_RIVAL_DONE, calculatePoints(&(dp->deck)), &(dp->deck));
 }
 
 //TODO to complete
@@ -252,7 +253,7 @@ void insertCard(tDeck *deck, unsigned int card)
 	deck->numCards++;
 }
 
-static inline void initSession(tSession *session, char *argv[], int socketfd, tString msg)
+static inline void welcomePlayers(tSession *session, char *argv[], int socketfd, tString msg)
 {
 	// Accept connection from player 1
 	session->player1.socket = acceptConnection(socketfd);
@@ -275,7 +276,7 @@ static inline void initSession(tSession *session, char *argv[], int socketfd, tS
 	sendString(session->player2.socket, msg);
 }
 
-static inline void resetPlay(tSession *session)
+static inline void initSession(tSession *session)
 {
 	clearDeck(&(session->player1.deck));
 	session->player1.bet = 0;

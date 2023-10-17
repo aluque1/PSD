@@ -45,16 +45,19 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		// Initial bet
-		while (code = (receiveUnsignedInt(socketfd) == TURN_BET))
+		code = receiveUnsignedInt(socketfd);
+		do
 		{
 			stack = receiveUnsignedInt(socketfd);
 			showCode(code);
 			sendUnsignedInt(socketfd, readBet(stack));
-		}
+			code = receiveUnsignedInt(socketfd);
+		}while (code == TURN_BET);
 
-		if (code != TURN_BET_OK) break;
 		playTurn(socketfd);
 		playTurn(socketfd);
+
+		if (code == TURN_GAME_WIN || TURN_GAME_LOSE) break;
 
 		/* stack = receiveUnsignedInt(socketfd);
 		printf("Stack: %d\n", stack); */
@@ -84,10 +87,9 @@ void playTurn(int socketfd)
 		printFancyDeck(&deck);
 		printf("Points: %d\n", points);
 		if (currentTurn == TURN_PLAY){
-			printf("Hit or Stand? (3/4): ");
 			sendUnsignedInt(socketfd, readOption());
 		}
-		currentTurn = receiveUnsignedInt(socketfd);
+		receiveTurn(socketfd, &currentTurn, &points, &deck);
 		
 	}while(currentTurn == TURN_PLAY);
 }

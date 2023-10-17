@@ -98,14 +98,14 @@ void printSession(tSession *session);
  *
  * @param session Session to be initialized.
  */
-static inline void initSession(tSession *session, char *argv[], int socketfd, tString msg);
+static inline void welcomePlayers(tSession *session, char *argv[], int socketfd, tString msg);
 
 /**
  * Resets a session.
  *
  * @param session Session to be reseted.
  */
-static inline void resetPlay(tSession *session);
+static inline void initSession(tSession *session);
 
 /**
  * Calculates the current points of a given deck.

@@ -4,10 +4,10 @@
 #define DEBUG_CLIENT 1
 
 /** Action taken by the player to stand */
-#define PLAYER_STAND 0
+#define PLAYER_STAND 1
 
 /** Action taken by the player to hit a card */
-#define PLAYER_HIT_CARD 1
+#define PLAYER_HIT_CARD 0
 
 /** Max message length */
 #define MAX_MSG_LENGTH 256
