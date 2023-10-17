@@ -2,17 +2,15 @@
 
 int main(int argc, char *argv[])
 {
-	int socketfd;					   /** Socket descriptor */
-	unsigned int port;				   /** Port number (server) */
-	struct sockaddr_in server_address; /** Server address structure */
-	char *serverIP;					   /** Server IP */
+	int socketfd;	   /** Socket descriptor */
 
-	unsigned int endOfGame; /** Flag to control the end of the game */
-	tString playerName;		/** Name of the player */
-	tString msg;			/** String buffer */
-	tDeck deck;				/** Deck */
-	unsigned int code;		/** Code */
-	unsigned int bet;		/** Bet */
+	unsigned int endOfGame; 	/** Flag to control the end of the game */
+	unsigned int code;			/** Code */
+	unsigned int bet;			/** Bet */
+	unsigned int stack;		/** Stack */
+	tString playerName;	/** Name of the player */
+	tString msg;		/** String buffer */
+	tDeck deck;			/** Deck */
 
 	// Check arguments!
 	if (argc != 3)
@@ -22,25 +20,11 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	// Get the port
-	port = atoi(argv[2]);
-
 	// Create socket and check if it has been successfully created
-	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
-		showError("ERROR while creating the socket");
+	socketfd = prepareClientSocket(argv);
 
-	// Get the server address
-	serverIP = argv[1];
-
-	// Fill server address structure
-	memset(&server_address, 0, sizeof(server_address));
-	server_address.sin_family = AF_INET;
-	server_address.sin_addr.s_addr = inet_addr(serverIP);
-	server_address.sin_port = htons(port);
-
-	// Connect with server
-	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
-		showError("ERROR while establishing connection");
+	// Init the end of game flag
+	endOfGame = FALSE;
 
 	// Init and send the player name
 	printf("Enter your name: ");
@@ -57,19 +41,55 @@ int main(int argc, char *argv[])
 	// Print welcome message
 	printf("%s%s!\n", msg, playerName);
 
-	// Init the end of game flag
-	endOfGame = FALSE;
-	while (!endOfGame)
+	// Main loop
+	while (1)
 	{
-		do
+		// Initial bet
+		while (code = (receiveUnsignedInt(socketfd) == TURN_BET))
 		{
-			code = receiveUnsignedInt(socketfd);
+			stack = receiveUnsignedInt(socketfd);
 			showCode(code);
-			sendUnsignedInt(socketfd, readBet());
-		} while (code == TURN_BET);
+			sendUnsignedInt(socketfd, readBet(stack));
+		}
+
+		if (code != TURN_BET_OK) break;
+		playTurn(socketfd);
+		playTurn(socketfd);
+
 		/* stack = receiveUnsignedInt(socketfd);
 		printf("Stack: %d\n", stack); */
 	}
+
+	if (code == TURN_GAME_WIN) printf("You win!\n");
+	else printf("You lose!\n");
+
+	// Close socket
+	close(socketfd);
+}
+
+void playTurn(int socketfd)
+{
+	unsigned int currentTurn;
+	unsigned int stack;
+	unsigned int points;
+	tDeck deck;
+
+	receiveTurn(socketfd, &currentTurn, &points, &deck);
+
+	if (currentTurn != TURN_PLAY) printf("Watching rival's turn...\n");
+	else printf("Your turn!\n");
+
+	do
+	{
+		printFancyDeck(&deck);
+		printf("Points: %d\n", points);
+		if (currentTurn == TURN_PLAY){
+			printf("Hit or Stand? (3/4): ");
+			sendUnsignedInt(socketfd, readOption());
+		}
+		currentTurn = receiveUnsignedInt(socketfd);
+		
+	}while(currentTurn == TURN_PLAY);
 }
 
 void showCode(unsigned int code)
@@ -133,7 +153,7 @@ void showCode(unsigned int code)
 	}
 }
 
-unsigned int readBet()
+unsigned int readBet(unsigned int stack)
 {
 	int isValid, bet = 0;
 	tString enteredMove;
@@ -145,6 +165,7 @@ unsigned int readBet()
 		bzero(enteredMove, STRING_LENGTH);
 		isValid = TRUE;
 
+		printf("\nYour stack is %d\n", stack);
 		printf("Enter a bet:");
 		fgets(enteredMove, STRING_LENGTH - 1, stdin);
 		enteredMove[strlen(enteredMove) - 1] = 0;
@@ -208,4 +229,41 @@ unsigned int readOption()
 	printf("\n");
 
 	return ((unsigned int)option);
+}
+
+void receiveTurn(int socketfd, unsigned int *turn, unsigned int *points, tDeck *deck)
+{
+	*turn = receiveUnsignedInt(socketfd);
+	*points = receiveUnsignedInt(socketfd);
+	receiveDeck(socketfd, deck);
+}
+
+int prepareClientSocket(char *argv[])
+{
+	int socketfd;					   /** Socket descriptor */
+	unsigned int port;				   /** Port number (server) */
+	struct sockaddr_in server_address; /** Server address structure */
+	char *serverIP;					   /** Server IP */
+
+	// Get the port
+	port = atoi(argv[2]);
+
+	// Create socket and check if it has been successfully created
+	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		showError("ERROR while creating the socket");
+
+	// Get the server address
+	serverIP = argv[1];
+
+	// Fill server address structure
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = inet_addr(serverIP);
+	server_address.sin_port = htons(port);
+
+	// Connect with server
+	if (connect(socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+		showError("ERROR while establishing connection");
+
+	return socketfd;
 }

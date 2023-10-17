@@ -1,0 +1,2 @@
+- Cambiar la recepción del nombre usando el MAXNAMELENGHT
+- Mover los cambis de game.h y game.c a los de server y client

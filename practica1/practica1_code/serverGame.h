@@ -39,25 +39,16 @@ typedef struct{
 	tDeck deck;
 	unsigned int stack;
 	unsigned int bet;
+	int socket;
 }tDataPlayer;
 
 /** Session represents a game between 2 players */
 typedef struct
 {
 	// Data for player 1
-	tString player1Name;
-	tDeck player1Deck;
-	unsigned int player1Stack;
-	unsigned int player1Bet;
-
 	tDataPlayer player1;
 
 	// Data for player 2
-	tString player2Name;
-	tDeck player2Deck;
-	unsigned int player2Stack;
-	unsigned int player2Bet;
-
 	tDataPlayer player2;
 
 	// Deck for the current game
@@ -73,12 +64,12 @@ typedef enum
 
 
 /**
- * Calculates the next player.
+ * Swaps the order of the players.
  *
- * @param currentPlayer The current player.
- * @return The next player to make a move.
+ * @param dp Player 1.
+ * @param dp2 Player 2.
  */
-tPlayer getNextPlayer(tPlayer currentPlayer);
+void getNextPlayer(tDataPlayer* dp, tDataPlayer* dp2);
 
 /**
  * Inits the game deck with all the cards.
@@ -107,7 +98,14 @@ void printSession(tSession *session);
  *
  * @param session Session to be initialized.
  */
-void initSession(tSession *session, char *argv[], int socketfd, int socketPlayer1, int socketPlayer2, tString msg);
+static inline void initSession(tSession *session, char *argv[], int socketfd, tString msg);
+
+/**
+ * Resets a session.
+ *
+ * @param session Session to be reseted.
+ */
+static inline void resetPlay(tSession *session);
 
 /**
  * Calculates the current points of a given deck.
@@ -124,6 +122,14 @@ unsigned int calculatePoints(tDeck *deck);
  * @return Randomly selected card from the game deck.
  */
 unsigned int getRandomCard(tDeck *deck);
+
+/**
+ * Inserts a card in a deck.
+ *
+ * @param deck Deck where the card will be inserted.
+ * @param card Card to be inserted.
+ */
+void insertCard(tDeck *deck, unsigned int card);
 
 /**
  * Encapsulates the send of the different deck struct elements
@@ -156,10 +162,12 @@ int acceptConnection(int socketfd);
  * Encapsulates the send of a turn
  *
  * @param playerSocket Socket descriptor
- * @param 
+ * @param turn Turn to be sent
+ * @param points Points to be sent
+ * @param deck Deck to be sent
  * @return void
  */
-void sendTurn(int playerSocket, unsigned int stack, unsigned int turn);
+void sendTurn(int playerSocket, unsigned int turn, unsigned int points, tDeck *deck);
 
 /**
  * Encapsulates the preparation of the bets for the start of the game
@@ -171,26 +179,17 @@ void sendTurn(int playerSocket, unsigned int stack, unsigned int turn);
  * 
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-unsigned int prepareBets(int playerSocket, unsigned int currentTurn, tSession session, tPlayer player);
+void prepareBets(tDataPlayer* dp);
 
 /**
  * Encapsulates the check of the bet
  * 
- * @param playerSocket Socket descriptor
  * @param stack Stack of the player
  * @param bet Bet of the player
  * @return TURN_BET_OK if the bet is correct, TURN_BET otherwise
  */
-unsigned int checkBet(int socketfd, unsigned int stack, unsigned int *bet);
+static inline unsigned int checkBet(unsigned int stack, unsigned int bet);
 
-/**
- * Encapsulates the bet of the player
- *
- * @param playerSocket Socket descriptor
- * @param stack Stack of the player
- * @param currentTurn Current turn 
- * @param bet Bet of the player
- * 
- * @return The bet of the player
- */
-unsigned int betPlayer(int playerSocket, unsigned int stack, unsigned int *currentTurn, unsigned int bet);
+void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck);
+
+unsigned int checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2);
