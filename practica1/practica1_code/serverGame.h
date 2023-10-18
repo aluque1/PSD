@@ -193,3 +193,5 @@ static inline unsigned int checkBet(unsigned int stack, unsigned int bet);
 void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck);
 
 unsigned int checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2);
+
+void splitChips(tDataPlayer* dp, tDataPlayer* dp2);

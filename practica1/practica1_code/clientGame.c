@@ -6,11 +6,9 @@ int main(int argc, char *argv[])
 
 	unsigned int endOfGame; 	/** Flag to control the end of the game */
 	unsigned int code;			/** Code */
-	unsigned int bet;			/** Bet */
 	unsigned int stack;		/** Stack */
 	tString playerName;	/** Name of the player */
 	tString msg;		/** String buffer */
-	tDeck deck;			/** Deck */
 
 	// Check arguments!
 	if (argc != 3)
@@ -42,7 +40,7 @@ int main(int argc, char *argv[])
 	printf("%s%s!\n", msg, playerName);
 
 	// Main loop
-	while (1)
+	while (!endOfGame)
 	{
 		// Initial bet
 		code = receiveUnsignedInt(socketfd);
@@ -57,10 +55,8 @@ int main(int argc, char *argv[])
 		playTurn(socketfd);
 		playTurn(socketfd);
 
-		if (code == TURN_GAME_WIN || TURN_GAME_LOSE) break;
-
-		/* stack = receiveUnsignedInt(socketfd);
-		printf("Stack: %d\n", stack); */
+		code = receiveUnsignedInt(socketfd);
+		endOfGame = (code >= TURN_GAME_WIN);
 	}
 
 	if (code == TURN_GAME_WIN) printf("You win!\n");
@@ -73,25 +69,30 @@ int main(int argc, char *argv[])
 void playTurn(int socketfd)
 {
 	unsigned int currentTurn;
-	unsigned int stack;
 	unsigned int points;
+	unsigned int option;
+	unsigned int turn;
 	tDeck deck;
 
-	receiveTurn(socketfd, &currentTurn, &points, &deck);
+	receiveTurn(socketfd, &turn, &points, &deck);
 
-	if (currentTurn != TURN_PLAY) printf("Watching rival's turn...\n");
+	if (turn != TURN_PLAY) printf("Watching rival's turn...\n");
 	else printf("Your turn!\n");
 
 	do
 	{
 		printFancyDeck(&deck);
 		printf("Points: %d\n", points);
-		if (currentTurn == TURN_PLAY){
-			sendUnsignedInt(socketfd, readOption());
+		if (turn == TURN_PLAY){
+			option = readOption();
+			sendUnsignedInt(socketfd, option);
 		}
 		receiveTurn(socketfd, &currentTurn, &points, &deck);
 		
-	}while (currentTurn == TURN_PLAY);
+	}while (currentTurn != TURN_PLAY_OUT && currentTurn != TURN_PLAY_RIVAL_DONE); 
+
+	printFancyDeck(&deck);
+	printf("Points: %d\n", points);
 }
 
 void showCode(unsigned int code)

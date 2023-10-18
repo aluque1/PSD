@@ -5,7 +5,6 @@ int main(int argc, char *argv[])
 {
 	int socketfd;					   /** Socket descriptor */
 	struct sockaddr_in serverAddress;  /** Server address structure */
-	unsigned int clientLength;		   /** Length of client structure */
 	tThreadArgs *threadArgs;		   /** Thread parameters */
 	pthread_t threadID;				   /** Thread ID */
 	tSession session;				   /** Session structure */
@@ -14,8 +13,6 @@ int main(int argc, char *argv[])
 	tDataPlayer* playerB;				   /** Data player B */
 
 	unsigned int gameEnd = FALSE;		  /** Flag to control the end of the game */
-	tPlayer nextPlayer = player1; /** Initial player */
-	unsigned int currentTurn;	  /** Current turn */
 
 	// Seed
 	srand(time(0));
@@ -33,6 +30,7 @@ int main(int argc, char *argv[])
 
 	// Init session
 	welcomePlayers(&session, argv, socketfd, msg);
+	initSession(&session);
 	playerA = &(session.player1);
 	playerB = &(session.player2);
 
@@ -41,7 +39,9 @@ int main(int argc, char *argv[])
 		// ---------------------------- GAME START ----------------------------
 
 		// Reset play
-		initSession(&session);
+		clearDeck(&(playerA->deck));
+		clearDeck(&(playerB->deck));
+		initDeck(&(session.gameDeck));
 		printSession(&session);
 
 		// Init bet & turns
@@ -50,6 +50,8 @@ int main(int argc, char *argv[])
 
 		gambling(playerA, playerB, &(session.gameDeck));
 		gambling(playerB, playerA, &(session.gameDeck));
+
+		splitChips(playerA, playerB);
 
 		gameEnd = checkGameEnd(playerA, playerB);
 
@@ -118,33 +120,60 @@ void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck)
 			points = calculatePoints(&(dp->deck));
 			turn = (points > 21) ? TURN_PLAY_OUT : TURN_PLAY;
 			sendTurn(dp->socket, turn, points, &(dp->deck));
-			sendTurn(dp2->socket, TURN_PLAY_WAIT, points, &(dp->deck));
+			sendTurn(dp2->socket, turn == TURN_PLAY ? TURN_PLAY_WAIT : TURN_PLAY_OUT, points, &(dp->deck));
+		}
+		else{
+			sendTurn(dp->socket, TURN_PLAY_OUT, calculatePoints(&(dp->deck)), &(dp->deck));
+			sendTurn(dp2->socket, TURN_PLAY_OUT, calculatePoints(&(dp->deck)), &(dp->deck));
 		}
 	}while (code != TURN_PLAY_STAND && turn != TURN_PLAY_OUT);
 
-	sendTurn(dp->socket, TURN_PLAY_WAIT, calculatePoints(&(dp->deck)), &(dp->deck));
-	sendTurn(dp2->socket, TURN_PLAY_RIVAL_DONE, calculatePoints(&(dp->deck)), &(dp->deck));
+	//sendTurn(dp->socket, TURN_PLAY_WAIT, calculatePoints(&(dp->deck)), &(dp->deck));
+	//sendTurn(dp2->socket, TURN_PLAY_RIVAL_DONE, calculatePoints(&(dp->deck)), &(dp->deck));
 }
 
-//TODO to complete
 unsigned int checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2)
 {
-	unsigned int end = (dp->stack == 0 || dp2->stack == 0);
-	if (!end) return FALSE;
-
-	if (dp->stack == 0)
+	unsigned int end;
+	if (dp->stack == 0 || dp2->stack == 0)
 	{
-		sendUnsignedInt(dp->socket, TURN_GAME_LOSE);
-		sendUnsignedInt(dp2->socket, TURN_GAME_WIN);
+		sendUnsignedInt(dp->socket, TURN_GAME_WIN + (dp->stack == 0));
+		sendUnsignedInt(dp2->socket, TURN_GAME_WIN + (dp2->stack == 0));
+		end = TRUE;
 	}
-	else if (dp2->stack == 0)
+	else
 	{
-		sendUnsignedInt(dp->socket, TURN_GAME_LOSE);
-		sendUnsignedInt(dp2->socket, TURN_GAME_WIN);
+		sendUnsignedInt(dp->socket, TURN_PLAY);
+		sendUnsignedInt(dp2->socket, TURN_PLAY);
+		end = FALSE;
 	}
-	return TRUE;
+	
+	return end;
 }
 
+void splitChips(tDataPlayer* dp, tDataPlayer* dp2)
+{
+	unsigned int pool = dp->bet + dp2->bet;
+	unsigned int p1Points = calculatePoints(&(dp->deck));
+	unsigned int p2Points = calculatePoints(&(dp2->deck));
+
+	dp->stack -= dp->bet;
+	dp2->stack -= dp2->bet;
+
+	if (p1Points > 21 || ((p1Points < p2Points) && (p2Points <= 21)))
+	{
+		dp2->stack += pool;
+	}
+	else if (p2Points > 21 || ((p2Points < p1Points) && (p1Points <= 21)))
+	{
+		dp->stack += pool;
+	}
+	else{
+		dp->stack += dp->bet;
+		dp2->stack += dp2->bet;
+	}
+}
+	
 void sendTurn(int playerSocket, unsigned int turn, unsigned int points, tDeck *deck)
 {
 	sendUnsignedInt(playerSocket, turn);

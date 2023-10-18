@@ -165,8 +165,8 @@ void sendDeck(int socketfd, tDeck *deck)
 	if (msgLength < sizeof(deck->numCards))
 		showError("ERROR while sending number of cards");
 
-	msgLength = send(socketfd, &(deck->cards), sizeof(deck->cards) * deck->numCards, 0);
-	if (msgLength < sizeof(deck->cards) * deck->numCards)
+	msgLength = send(socketfd, &(deck->cards), sizeof(deck->cards[0]) * deck->numCards, 0);
+	if (msgLength < sizeof(deck->cards[0]) * deck->numCards)
 		showError("ERROR while sending cards");
 }
 
@@ -177,7 +177,7 @@ void receiveDeck(int socketfd, tDeck *deck)
 	if (msgLength < sizeof(deck->numCards))
 		showError("ERROR while receiving number of cards");
 
-	msgLength = recv(socketfd, &(deck->cards), sizeof(deck->cards) * deck->numCards, 0);
-	if (msgLength < sizeof(deck->cards) * deck->numCards)
+	msgLength = recv(socketfd, &(deck->cards), sizeof(deck->cards[0]) * deck->numCards, 0);
+	if (msgLength < sizeof(deck->cards[0]) * deck->numCards)
 		showError("ERROR while receiving cards");
 }
