@@ -3,16 +3,10 @@
 
 int main(int argc, char *argv[])
 {
-	int socketfd;					   /** Socket descriptor */
-	struct sockaddr_in serverAddress;  /** Server address structure */
-	tThreadArgs *threadArgs;		   /** Thread parameters */
-	pthread_t threadID;				   /** Thread ID */
-	tSession session;				   /** Session structure */
-	tString msg;					   /** String buffer */
-	tDataPlayer* playerA;				   /** Data player A */
-	tDataPlayer* playerB;				   /** Data player B */
-
-	unsigned int gameEnd = FALSE;		  /** Flag to control the end of the game */
+	int socketfd;					  			/** Socket descriptor */
+	struct sockaddr_in serverAddress; 			/** Server address structure */
+	tThreadArgs threadArgs[MAX_CONNECTIONS];	/** Thread parameters */
+	pthread_t threadID[MAX_CONNECTIONS];		/** Thread ID */
 
 	// Seed
 	srand(time(0));
@@ -28,8 +22,45 @@ int main(int argc, char *argv[])
 	// Create a socket (also bind and listen)
 	socketfd = prepareServerSocket(serverAddress, atoi(argv[1]));
 
+	unsigned int n = 0;
+	while(1)
+	{
+		// Accept connection from player 1
+		threadArgs[n].socketPlayer1 = acceptConnection(socketfd);
+
+		// Accept connection from player 2
+		threadArgs[n].socketPlayer2 = acceptConnection(socketfd);
+
+		if (pthread_create(&threadID[n], NULL, threadTask, &threadArgs[n]) != 0)
+			showError("Error while creating thread");
+		n++;
+	}
+
+
+	for (int i = 0; i < n; i++)
+	{
+		pthread_join(threadID[i], NULL);
+		exit(0);
+	}
+	return EXIT_SUCCESS;
+}
+
+void *threadTask(void *args)
+{
+	tThreadArgs *threadArgs; 		/** Thread parameters */
+	tSession session;				/** Session structure */
+	tString msg;					/** String buffer */
+	unsigned int gameEnd = FALSE;	/** Flag to control the end of the game */
+	tDataPlayer *playerA;			/** Data player A */
+	tDataPlayer *playerB;			/** Data player B */
+
+	// Get thread parameters
+	threadArgs = (tThreadArgs *)args;
+	session.player1.socket = threadArgs->socketPlayer1;
+	session.player2.socket = threadArgs->socketPlayer2;
+
 	// Init session
-	welcomePlayers(&session, argv, socketfd, msg);
+	welcomePlayers(&session, msg);
 	initSession(&session);
 	playerA = &(session.player1);
 	playerB = &(session.player2);
@@ -55,7 +86,8 @@ int main(int argc, char *argv[])
 
 		gameEnd = checkGameEnd(playerA, playerB);
 
-		if (!gameEnd) getNextPlayer(playerA, playerB);
+		if (!gameEnd)
+			getNextPlayer(playerA, playerB);
 
 		/* Para cuando tengamos threads
 		// Allocate memory
@@ -67,15 +99,13 @@ int main(int argc, char *argv[])
 		threadArgs->socketPlayer2 = socketPlayer2;
 		*/
 	}
-
 	// Close sockets
 	close(session.player1.socket);
 	close(session.player2.socket);
-
-	return EXIT_SUCCESS;
+	pthread_exit(NULL);
 }
 
-void prepareBets(tDataPlayer* dp)
+void prepareBets(tDataPlayer *dp)
 {
 	unsigned int turn = TURN_BET;
 	unsigned int playerBet = 0;
@@ -98,10 +128,10 @@ static inline unsigned int checkBet(unsigned int stack, unsigned int bet)
 	return (bet <= MAX_BET && bet > 0 && stack >= bet);
 }
 
-void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck)
+void gambling(tDataPlayer *dp, tDataPlayer *dp2, tDeck *gameDeck)
 {
-	unsigned int code; /** Code received from the client */
-	unsigned int turn; /** Turn of the player */
+	unsigned int code;	 /** Code received from the client */
+	unsigned int turn;	 /** Turn of the player */
 	unsigned int points; /** Points of the player */
 
 	insertCard(&(dp->deck), getRandomCard(gameDeck));
@@ -122,17 +152,18 @@ void gambling(tDataPlayer* dp, tDataPlayer* dp2, tDeck* gameDeck)
 			sendTurn(dp->socket, turn, points, &(dp->deck));
 			sendTurn(dp2->socket, turn == TURN_PLAY ? TURN_PLAY_WAIT : TURN_PLAY_OUT, points, &(dp->deck));
 		}
-		else{
+		else
+		{
 			sendTurn(dp->socket, TURN_PLAY_OUT, calculatePoints(&(dp->deck)), &(dp->deck));
 			sendTurn(dp2->socket, TURN_PLAY_OUT, calculatePoints(&(dp->deck)), &(dp->deck));
 		}
-	}while (code != TURN_PLAY_STAND && turn != TURN_PLAY_OUT);
+	} while (code != TURN_PLAY_STAND && turn != TURN_PLAY_OUT);
 
-	//sendTurn(dp->socket, TURN_PLAY_WAIT, calculatePoints(&(dp->deck)), &(dp->deck));
-	//sendTurn(dp2->socket, TURN_PLAY_RIVAL_DONE, calculatePoints(&(dp->deck)), &(dp->deck));
+	// sendTurn(dp->socket, TURN_PLAY_WAIT, calculatePoints(&(dp->deck)), &(dp->deck));
+	// sendTurn(dp2->socket, TURN_PLAY_RIVAL_DONE, calculatePoints(&(dp->deck)), &(dp->deck));
 }
 
-unsigned int checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2)
+unsigned int checkGameEnd(tDataPlayer *dp, tDataPlayer *dp2)
 {
 	unsigned int end;
 	if (dp->stack == 0 || dp2->stack == 0)
@@ -147,11 +178,11 @@ unsigned int checkGameEnd(tDataPlayer* dp, tDataPlayer* dp2)
 		sendUnsignedInt(dp2->socket, TURN_PLAY);
 		end = FALSE;
 	}
-	
+
 	return end;
 }
 
-void splitChips(tDataPlayer* dp, tDataPlayer* dp2)
+void splitChips(tDataPlayer *dp, tDataPlayer *dp2)
 {
 	unsigned int pool = dp->bet + dp2->bet;
 	unsigned int p1Points = calculatePoints(&(dp->deck));
@@ -168,12 +199,13 @@ void splitChips(tDataPlayer* dp, tDataPlayer* dp2)
 	{
 		dp->stack += pool;
 	}
-	else{
+	else
+	{
 		dp->stack += dp->bet;
 		dp2->stack += dp2->bet;
 	}
 }
-	
+
 void sendTurn(int playerSocket, unsigned int turn, unsigned int points, tDeck *deck)
 {
 	sendUnsignedInt(playerSocket, turn);
@@ -181,9 +213,9 @@ void sendTurn(int playerSocket, unsigned int turn, unsigned int points, tDeck *d
 	sendDeck(playerSocket, deck);
 }
 
-void getNextPlayer(tDataPlayer* dp, tDataPlayer* dp2)
+void getNextPlayer(tDataPlayer *dp, tDataPlayer *dp2)
 {
-	tDataPlayer* aux;
+	tDataPlayer *aux;
 	aux = dp;
 	dp = dp2;
 	dp2 = aux;
@@ -282,14 +314,8 @@ void insertCard(tDeck *deck, unsigned int card)
 	deck->numCards++;
 }
 
-static inline void welcomePlayers(tSession *session, char *argv[], int socketfd, tString msg)
+static inline void welcomePlayers(tSession *session, tString msg)
 {
-	// Accept connection from player 1
-	session->player1.socket = acceptConnection(socketfd);
-
-	// Accept connection from player 2
-	session->player2.socket = acceptConnection(socketfd);
-
 	// Recieve player 1 name
 	receiveString(session->player1.socket, session->player1.name);
 

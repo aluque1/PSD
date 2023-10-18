@@ -98,7 +98,7 @@ void printSession(tSession *session);
  *
  * @param session Session to be initialized.
  */
-static inline void welcomePlayers(tSession *session, char *argv[], int socketfd, tString msg);
+static inline void welcomePlayers(tSession *session, tString msg);
 
 /**
  * Resets a session.
@@ -157,6 +157,17 @@ int prepareServerSocket(struct sockaddr_in serverAddress, unsigned int port);
  * @return Socket descriptor for the accepted connection
  */
 int acceptConnection(int socketfd);
+
+/**
+ * Encapsulates the creation of a thread with the game information
+ *
+ * @param socketfd Socket descriptor
+ * @param serverAddress Server address structure
+ * @param port Port number
+ * @param argv Arguments
+ * @return Socket descriptor for the server
+ */
+void *threadTask(void *args);
 
 /**
  * Encapsulates the send of a turn
