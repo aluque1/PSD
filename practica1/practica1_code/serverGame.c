@@ -88,17 +88,8 @@ void *threadTask(void *args)
 
 		if (!gameEnd)
 			getNextPlayer(playerA, playerB);
-
-		/* Para cuando tengamos threads
-		// Allocate memory
-		if ((threadArgs = (tThreadArgs *)malloc(sizeof(tThreadArgs))) == NULL)
-			showError("Error while allocating memory");
-
-		// Set socket to the thread's parameter structure
-		threadArgs->socketPlayer1 = socketPlayer1;
-		threadArgs->socketPlayer2 = socketPlayer2;
-		*/
 	}
+
 	// Close sockets
 	close(session.player1.socket);
 	close(session.player2.socket);
