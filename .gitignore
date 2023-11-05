@@ -62,3 +62,17 @@ dkms.conf
 *.DS_Store
 *.xml
 .vscode/
+
+#gSoap generated files
+soapC.c
+soapClient.c
+soapH.h
+soapServer.c
+soapStub.h
+soapClientLib.c
+soapServerLib.c
+
+*.xml
+*.xsd
+*.wsdl
+*.nsmap
