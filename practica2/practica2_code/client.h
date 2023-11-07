@@ -1,5 +1,5 @@
 #include "soapH.h"
-#include "blackJack.nsmap"
+#include "blackJackns.nsmap"
 #include "game.h"
 
 /** Debug mode? */

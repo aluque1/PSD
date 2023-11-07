@@ -3,6 +3,24 @@
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
 
+int main(int argc, char **argv)
+{
+	struct soap soap;
+	struct soap *tsoap;
+	pthread_t tid;
+	int port;
+	SOAP_SOCKET m, s;
+
+	// Check arguments
+	if (argc != 2)
+	{
+		printf("Usage: %s port\n", argv[0]);
+		exit(0);
+	}
+
+	return 0;
+}
+
 void initGame(tGame *game)
 {
 	// Init players' name
@@ -132,22 +150,4 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
 
 	return SOAP_OK;
-}
-
-int main(int argc, char **argv)
-{
-	struct soap soap;
-	struct soap *tsoap;
-	pthread_t tid;
-	int port;
-	SOAP_SOCKET m, s;
-
-	// Check arguments
-	if (argc != 2)
-	{
-		printf("Usage: %s port\n", argv[0]);
-		exit(0);
-	}
-
-	return 0;
 }
