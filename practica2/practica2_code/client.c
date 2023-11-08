@@ -77,5 +77,13 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
+	// Obtain player name
+	printf("Enter your name:");
+	fgets(playerName, STRING_LENGTH - 1, stdin);
+	playerName[strlen(playerName) - 1] = 0;
+
+	
+
+
 	return 0;
 }
