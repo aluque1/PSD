@@ -81,30 +81,40 @@ int main(int argc, char **argv)
 	if (DEBUG_CLIENT)
 		printf("Server: %s\n", serverURL);
 
-	// Obtain player name
-	printf("Enter your name:");
-	playerName.msg = (xsd__string)malloc(STRING_LENGTH);
-	fgets(playerName.msg, STRING_LENGTH - 1, stdin);
-	playerName.msg[strlen(playerName.msg) - 1] = 0;
-	playerName.__size = strlen(playerName.msg);
-
-	// Register player <--- It gets bugged out here
-	soap_call_blackJackns__register(&soap, serverURL, "", playerName, &resCode);
-
-	// Check for errors...
-	if (soap.error)
+	// Register player loop :
+	do
 	{
-		soap_print_fault(&soap, stderr);
-		exit(1);
-	}
+		printf("Enter your name:");
+		playerName.msg = (xsd__string)malloc(STRING_LENGTH);
+		fgets(playerName.msg, STRING_LENGTH - 1, stdin);
+		playerName.msg[strlen(playerName.msg) - 1] = 0;
+		playerName.__size = strlen(playerName.msg);
 
-	if (DEBUG_CLIENT)
+		// Register player
+		soap_call_blackJackns__register(&soap, serverURL, "", playerName, &resCode);
+
+		// Check for errors...
+		if (soap.error)
+		{
+			soap_print_fault(&soap, stderr);
+			exit(1);
+		}
+		if (DEBUG_CLIENT)
+		{
+			if (resCode >= 0)
+				printf("Player registered in game : %d\n", resCode);
+			else
+				printf("Player not registered [ERR:%d]\n", resCode);
+		}
+	} while (resCode < 0);
+
+	// Game loop
+	while (1)
 	{
-		if (resCode >= 0)
-			printf("Player registered in game : %d\n", resCode);
-		else
-			printf("Player not registered [ERR:%d]\n", resCode);
+		soap_call_blackJackns__getGameStatus(&soap, serverURL, "", playerName, &gameStatus, &resCode);
+		sleep(5);
 	}
+	
 	
 
 	// Clean the environment

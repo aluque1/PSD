@@ -124,3 +124,12 @@ void copyGameStatusStructure(blackJackns__tBlock *status, char *message, blackJa
  * @return Points of the deck.
  */
 unsigned int calculatePoints(blackJackns__tDeck *deck);
+
+/**
+ * Finds if player exists in the game.
+ *
+ * @param game Game where the player is searched.
+ * @param playerName Player name.
+ * @return if player exists
+ */
+ int playerExists(tGame game, char *playerName, int *playerPos);

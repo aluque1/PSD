@@ -207,6 +207,22 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 	return points;
 }
 
+int playerExists(tGame game, char *playerName, int *playerPos)
+{
+	if (strcmp(game.player1Name, playerName) == 0)
+	{
+		*playerPos = 1;
+		return TRUE;
+	}
+	else if (strcmp(game.player2Name, playerName) == 0)
+	{
+		*playerPos = 2;
+		return TRUE;
+	}
+	else
+		return FALSE;
+}
+
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex;
@@ -214,6 +230,7 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	int gameNotFull;
 	int foundGameNotFull = FALSE;
 	int contGamesFull = 0;
+	int playerPos;
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 
@@ -223,7 +240,7 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	// Search for name in the games
 	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
 	{
-		if (strcmp(playerName.msg, games[gameIndex].player1Name) == 0 || strcmp(playerName.msg, games[gameIndex].player2Name) == 0)
+		if (playerExists(games[gameIndex], playerName.msg, playerPos))
 		{
 			*result = ERROR_NAME_REPEATED;
 			if (DEBUG_SERVER)
@@ -269,4 +286,40 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		printf("[Register] Game [%d] status: %d\n", gameNotFull, games[gameNotFull].status);
 	}
 	return SOAP_OK;
+}
+
+
+int blackJackns__getStatus(struct soap *soap, int gameID, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock, int *result)
+{
+	int gameIndex;
+	int playerIndex;
+	int playerFound = FALSE;
+	int playerPos;
+
+	// Set \0 at the end of the string
+	playerName.msg[playerName.__size] = 0;
+
+	if (DEBUG_SERVER)
+		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameID);
+
+	/* if (playerExists(gameID, playerName.msg, &playerIndex, &playerPos))
+	{
+		if(playerPos == 1)
+			copyGameStatusStructure(&gameBlock, games[gameID].player1Name, games[gameID].player1Deck, games[gameID].player1Bet);
+		else
+			copyGameStatusStructure(&gameBlock, games[gameID].player2Name, games[gameID].player2Deck, games[gameID].player2Bet);
+
+		*result = games[gameID].status;
+		if (DEBUG_SERVER)
+			printf("[GetStatus] Status is [%d] for player [%s] in game [%d]\n", result, playerName.msg, gameID);
+	}
+	else
+	{
+		*result = ERROR_PLAYER_NOT_FOUND;
+		if (DEBUG_SERVER)
+			printf("[GetStatus] Player [%s] not found in game [%d]\n", playerName.msg, gameID);
+	} */
+
+	return SOAP_OK;
+	
 }
