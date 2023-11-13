@@ -3,16 +3,16 @@
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
 
-void *processRequest(void *soap){
-
+void *processRequest(void *soap)
+{
 	pthread_detach(pthread_self());
 
-	printf ("Processing a new request...");
+	printf("Processing a new request...");
 
-	soap_serve((struct soap*)soap);
-	soap_destroy((struct soap*)soap);
-	soap_end((struct soap*)soap);
-	soap_done((struct soap*)soap);
+	soap_serve((struct soap *)soap);
+	soap_destroy((struct soap *)soap);
+	soap_end((struct soap *)soap);
+	soap_done((struct soap *)soap);
 	free(soap);
 
 	return NULL;
@@ -52,6 +52,9 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	// Init server structures
+	initServerStructures(&soap);
+
 	printf("Server is ON!\n");
 
 	while (TRUE)
@@ -69,7 +72,6 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Time out!\n");
 			break;
 		}
-
 		// Copy the SOAP environment
 		tsoap = soap_copy(&soap);
 		if (!tsoap)
@@ -79,9 +81,11 @@ int main(int argc, char **argv)
 		}
 
 		// Create a new thread to process the request
-		pthread_create(&tid, NULL, (void*(*)(void*))processRequest, (void*)tsoap);
+		pthread_create(&tid, NULL, (void *(*)(void *))processRequest, (void *)tsoap);
 	}
 
+	// Detach SOAP environment
+	soap_done(&soap);
 	return 0;
 }
 
@@ -206,11 +210,63 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex;
+
+	int gameNotFull;
+	int foundGameNotFull = FALSE;
+	int contGamesFull = 0;
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 
 	if (DEBUG_SERVER)
 		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
 
+	// Search for name in the games
+	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
+	{
+		if (strcmp(playerName.msg, games[gameIndex].player1Name) == 0 || strcmp(playerName.msg, games[gameIndex].player2Name) == 0)
+		{
+			*result = ERROR_NAME_REPEATED;
+			if (DEBUG_SERVER)
+				printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
+			return SOAP_OK;
+		}
+		if (games[gameIndex].status == gameReady)
+			++contGamesFull;
+		else
+		{
+			if (!foundGameNotFull)
+			{
+				foundGameNotFull = TRUE;
+				gameNotFull = gameIndex;
+			}
+		}
+	}
+
+	if (contGamesFull == MAX_GAMES)
+	{
+		*result = ERROR_SERVER_FULL;
+		if (DEBUG_SERVER)
+			printf("[Register] No empty games\n");
+		return SOAP_OK;
+	}
+
+	if (games[gameNotFull].player1Name[0] == 0)
+	{
+		strcpy(games[gameNotFull].player1Name, playerName.msg);
+		games[gameNotFull].status = gameWaitingPlayer;
+	}
+	else
+	{
+		strcpy(games[gameNotFull].player2Name, playerName.msg);
+		games[gameNotFull].status = gameReady;
+	}
+
+	*result = gameNotFull;
+
+	if (DEBUG_SERVER)
+	{
+		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameNotFull);
+		printf("[Register] Game [%d] status: %d\n", gameNotFull, games[gameNotFull].status);
+	}
 	return SOAP_OK;
 }

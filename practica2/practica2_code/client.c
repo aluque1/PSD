@@ -98,7 +98,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	printf("Player registered in game : %d\n", resCode);
+	if (DEBUG_CLIENT)
+	{
+		if (resCode >= 0)
+			printf("Player registered in game : %d\n", resCode);
+		else
+			printf("Player not registered [ERR:%d]\n", resCode);
+	}
+	
 
 	// Clean the environment
 	soap_destroy(&soap);
