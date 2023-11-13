@@ -3,6 +3,21 @@
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
 
+void *processRequest(void *soap){
+
+	pthread_detach(pthread_self());
+
+	printf ("Processing a new request...");
+
+	soap_serve((struct soap*)soap);
+	soap_destroy((struct soap*)soap);
+	soap_end((struct soap*)soap);
+	soap_done((struct soap*)soap);
+	free(soap);
+
+	return NULL;
+}
+
 int main(int argc, char **argv)
 {
 	struct soap soap;
@@ -43,8 +58,6 @@ int main(int argc, char **argv)
 	{
 		// Accept a new connection
 		s = soap_accept(&soap);
-
-		// Socket is not valid
 		if (!soap_valid_socket(s))
 		{
 			if (soap.errnum)
@@ -52,20 +65,21 @@ int main(int argc, char **argv)
 				soap_print_fault(&soap, stderr);
 				exit(1);
 			}
+
 			fprintf(stderr, "Time out!\n");
 			break;
 		}
 
 		// Copy the SOAP environment
 		tsoap = soap_copy(&soap);
-
 		if (!tsoap)
 		{
 			printf("SOAP copy error!\n");
 			break;
 		}
 
-		// Create a new thread ------ PARA CUANDO TENGAMOS THREADS
+		// Create a new thread to process the request
+		pthread_create(&tid, NULL, (void*(*)(void*))processRequest, (void*)tsoap);
 	}
 
 	return 0;
@@ -192,7 +206,6 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex;
-
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 

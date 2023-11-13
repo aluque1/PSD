@@ -66,7 +66,6 @@ typedef struct tDeck
 	unsigned int *cards;
 } blackJackns__tDeck;
 
-/** Response from the server */
 typedef struct tBlock
 {
 	int code;
@@ -74,4 +73,16 @@ typedef struct tBlock
 	blackJackns__tDeck deck;
 } blackJackns__tBlock;
 
+/* 
+	TO-DO: Check if the following functions are correctly implemented in server.c
+	
+	-[] int blackJackns__register(blackJackns__tMessage playerName, int *result);
+ */
 int blackJackns__register(blackJackns__tMessage playerName, int *result);
+
+/* 
+	TO-DO: Implement the following functions in server.c
+
+	-[] int blackJackns__getStatus(int gameID, blackJackns__tMessage playerName, int *result);
+	-[] int blackJackns__playerMove(int gameID, blackJackns__tMessage playerName, int *result);
+ */

@@ -4,7 +4,7 @@
 #include <pthread.h>
 
 /** Flag to enable debugging */
-#define DEBUG_SERVER 1
+#define DEBUG_SERVER TRUE
 
 /** Maximum number of active games in the server */
 #define MAX_GAMES 5

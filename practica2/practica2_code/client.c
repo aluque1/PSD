@@ -77,13 +77,32 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
+	// Debug?
+	if (DEBUG_CLIENT)
+		printf("Server: %s\n", serverURL);
+
 	// Obtain player name
 	printf("Enter your name:");
-	fgets(playerName, STRING_LENGTH - 1, stdin);
-	playerName[strlen(playerName) - 1] = 0;
+	playerName.msg = (xsd__string)malloc(STRING_LENGTH);
+	fgets(playerName.msg, STRING_LENGTH - 1, stdin);
+	playerName.msg[strlen(playerName.msg) - 1] = 0;
+	playerName.__size = strlen(playerName.msg);
 
-	
+	// Register player <--- It gets bugged out here
+	soap_call_blackJackns__register(&soap, serverURL, "", playerName, &resCode);
 
+	// Check for errors...
+	if (soap.error)
+	{
+		soap_print_fault(&soap, stderr);
+		exit(1);
+	}
 
+	printf("Player registered in game : %d\n", resCode);
+
+	// Clean the environment
+	soap_destroy(&soap);
+	soap_end(&soap);
+	soap_done(&soap);
 	return 0;
 }
