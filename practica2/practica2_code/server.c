@@ -225,11 +225,31 @@ int playerExists(tGame game, char *playerName, tPlayer *player)
 }
 
 // TODO : debug segmentation fault
+/*
+varibles a bloquear array de status y array de nombres 
+lock statuses s
+lock names n
+*/
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	/*
 	variables;
-	lock(m);
+	int gameIndex;
+	int foundAvailableGame = FALSE;
+	int gameNotFull;
+
+
+	lock(s);
+	while (!foundAvailableGame || gameIndex < MAX_GAMES)
+	{
+		if (gameStatus[gameIndex] != gameReady)
+		{
+			foundAvailableGame = TRUE;
+			gameNotFull = gameIndex;
+		}
+		else
+			++gameIndex;
+	}
 	--- Podemos hacer una lista de espera por orden de llegasa o que sea la guerra
 	while(!foundAvailableGame)
 		processCondition.wait(m, p);
