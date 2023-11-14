@@ -58,7 +58,6 @@ typedef struct game
 
 	blackJackns__tDeck gameDeck; /** Main deck */
 	int endOfGame;				 /** Flag to control the end of the game */
-	tGameState status;			 /** Flag to indicate the status of this game */
 
 } tGame;
 
@@ -67,7 +66,7 @@ typedef struct game
  *
  * @param game Game to be initialized.
  */
-void initGame(tGame *game);
+void initGame(tGame *game, tGameState *status);
 
 /**
  * Initialize server structures and alloc memory.
@@ -132,4 +131,4 @@ unsigned int calculatePoints(blackJackns__tDeck *deck);
  * @param playerName Player name.
  * @return if player exists
  */
- int playerExists(tGame game, char *playerName, int *playerPos);
+ int playerExists(tGame game, char *playerName, tPlayer *player);

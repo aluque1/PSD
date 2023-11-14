@@ -99,6 +99,7 @@ int main(int argc, char **argv)
 			soap_print_fault(&soap, stderr);
 			exit(1);
 		}
+		gameId = resCode;
 		if (DEBUG_CLIENT)
 		{
 			if (resCode >= 0)
@@ -111,11 +112,9 @@ int main(int argc, char **argv)
 	// Game loop
 	while (1)
 	{
-		soap_call_blackJackns__getGameStatus(&soap, serverURL, "", playerName, &gameStatus, &resCode);
+		//soap_call_blackJackns__getGameStatus(&soap, serverURL, "", gameId, playerName, &gameStatus, &resCode);
 		sleep(5);
 	}
-	
-	
 
 	// Clean the environment
 	soap_destroy(&soap);

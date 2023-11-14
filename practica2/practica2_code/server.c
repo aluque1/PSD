@@ -2,6 +2,7 @@
 
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
+tGameState gameStatus[MAX_GAMES];
 
 void *processRequest(void *soap)
 {
@@ -89,7 +90,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void initGame(tGame *game)
+void initGame(tGame *game, tGameState *status)
 {
 	// Init players' name
 	memset(game->player1Name, 0, STRING_LENGTH);
@@ -108,7 +109,7 @@ void initGame(tGame *game)
 
 	// Game status variables
 	game->endOfGame = FALSE;
-	game->status = gameEmpty;
+	*status = gameEmpty;
 }
 
 void initServerStructures(struct soap *soap)
@@ -127,7 +128,7 @@ void initServerStructures(struct soap *soap)
 		allocDeck(soap, &(games[i].player1Deck));
 		allocDeck(soap, &(games[i].player2Deck));
 		allocDeck(soap, &(games[i].gameDeck));
-		initGame(&(games[i]));
+		initGame(&(games[i]), &(gameStatus[i]));
 	}
 }
 
@@ -207,29 +208,29 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 	return points;
 }
 
-int playerExists(tGame game, char *playerName, int *playerPos)
+int playerExists(tGame game, char *playerName, tPlayer *player)
 {
 	if (strcmp(game.player1Name, playerName) == 0)
 	{
-		*playerPos = 1;
+		*player = player1;
 		return TRUE;
 	}
 	else if (strcmp(game.player2Name, playerName) == 0)
 	{
-		*playerPos = 2;
+		*player = player2;
 		return TRUE;
 	}
 	else
 		return FALSE;
 }
 
+// TODO : debug segmentation fault
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex;
+	int foundAvailableGame = FALSE;
 
 	int gameNotFull;
-	int foundGameNotFull = FALSE;
-	int contGamesFull = 0;
 	int playerPos;
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
@@ -237,7 +238,28 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	if (DEBUG_SERVER)
 		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
 
-	// Search for name in the games
+	// First check to see the first empty game
+	while (!foundAvailableGame || gameIndex < MAX_GAMES)
+	{
+		if (gameStatus[gameIndex] != gameReady)
+		{
+			foundAvailableGame = TRUE;
+			gameNotFull = gameIndex;
+		}
+		else
+			++gameIndex;
+	}
+
+	// If there is no empty game, return ERROR_SERVER_FULL
+	if (gameIndex + 1 == MAX_GAMES)
+	{
+		*result = ERROR_SERVER_FULL;
+		if (DEBUG_SERVER)
+			printf("[Register] No empty games\n");
+		return SOAP_OK;
+	}
+
+	// Check if the player name already exists in the server
 	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
 	{
 		if (playerExists(games[gameIndex], playerName.msg, playerPos))
@@ -247,35 +269,6 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 				printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
 			return SOAP_OK;
 		}
-		if (games[gameIndex].status == gameReady)
-			++contGamesFull;
-		else
-		{
-			if (!foundGameNotFull)
-			{
-				foundGameNotFull = TRUE;
-				gameNotFull = gameIndex;
-			}
-		}
-	}
-
-	if (contGamesFull == MAX_GAMES)
-	{
-		*result = ERROR_SERVER_FULL;
-		if (DEBUG_SERVER)
-			printf("[Register] No empty games\n");
-		return SOAP_OK;
-	}
-
-	if (games[gameNotFull].player1Name[0] == 0)
-	{
-		strcpy(games[gameNotFull].player1Name, playerName.msg);
-		games[gameNotFull].status = gameWaitingPlayer;
-	}
-	else
-	{
-		strcpy(games[gameNotFull].player2Name, playerName.msg);
-		games[gameNotFull].status = gameReady;
 	}
 
 	*result = gameNotFull;
@@ -283,11 +276,10 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	if (DEBUG_SERVER)
 	{
 		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameNotFull);
-		printf("[Register] Game [%d] status: %d\n", gameNotFull, games[gameNotFull].status);
+		printf("[Register] Game [%d] status: %d\n", gameNotFull, gameStatus[gameNotFull]);
 	}
 	return SOAP_OK;
 }
-
 
 int blackJackns__getStatus(struct soap *soap, int gameID, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock, int *result)
 {
@@ -321,5 +313,4 @@ int blackJackns__getStatus(struct soap *soap, int gameID, blackJackns__tMessage 
 	} */
 
 	return SOAP_OK;
-	
 }
