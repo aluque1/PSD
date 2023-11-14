@@ -103,16 +103,16 @@ int main(int argc, char **argv)
 		if (DEBUG_CLIENT)
 		{
 			if (resCode >= 0)
-				printf("Player registered in game : %d\n", resCode);
+				printf("Player registered in game : %d\n", gameId);
 			else
-				printf("Player not registered [ERR:%d]\n", resCode);
+				printf("Player not registered [ERR:%d]\n", gameId);
 		}
 	} while (resCode < 0);
 
 	// Game loop
 	while (1)
 	{
-		soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus, &resCode);
+		//soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus, &resCode);
 		sleep(5);
 	}
 

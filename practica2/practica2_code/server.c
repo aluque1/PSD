@@ -1,8 +1,13 @@
 #include "server.h"
+#include <pthread.h>
 
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
 tGameState gameStatus[MAX_GAMES];
+
+/** Mutex to protect the shared array. */
+pthread_mutex_t s; /* mutex for the statuses */
+pthread_mutex_t n; /* mutex for the names */
 
 void *processRequest(void *soap)
 {
@@ -224,7 +229,6 @@ int playerExists(tGame game, char *playerName, tPlayer *player)
 		return FALSE;
 }
 
-// TODO : debug segmentation fault
 /*
 varibles a bloquear array de status y array de nombres 
 lock statuses s
@@ -260,12 +264,13 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	unlock(m);
 	 */
 
-
-	int gameIndex;
+	int gameIndex = 0;
 	int foundAvailableGame = FALSE;
 
 	int gameNotFull;
-	int playerPos;
+	int player;
+
+	// pthread_mutex_lock(&s); TODO aqui hago un lock del mutex de lo de status -------------------------------
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 
@@ -284,6 +289,8 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			++gameIndex;
 	}
 
+	// pthread_mutex_unlock(&s); TODO aqui hago unlock del mutex de lo de status --------------------------------
+
 	// If there is no empty game, return ERROR_SERVER_FULL
 	if (gameIndex + 1 == MAX_GAMES)
 	{
@@ -293,10 +300,11 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		return SOAP_OK;
 	}
 
+	// pthread_mutex_lock(&n);  TODO aqui hago un lock del mutex de lo de status -------------------------------
 	// Check if the player name already exists in the server
 	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
 	{
-		if (playerExists(games[gameIndex], playerName.msg, playerPos))
+		if (playerExists(games[gameIndex], playerName.msg, player))
 		{
 			*result = ERROR_NAME_REPEATED;
 			if (DEBUG_SERVER)
@@ -304,9 +312,16 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			return SOAP_OK;
 		}
 	}
+	
+	// If the player name does not exist, register it in the first empty game
+	if (player == player1)
+		strcpy(games[gameNotFull].player1Name, playerName.msg);
+	else
+		strcpy(games[gameNotFull].player2Name, playerName.msg);
 
 	*result = gameNotFull;
 
+	// TODO pthread_mutex_unlock(&n); aqui hago unlock del mutex de lo de status --------------------------------
 	if (DEBUG_SERVER)
 	{
 		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameNotFull);
