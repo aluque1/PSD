@@ -227,6 +227,20 @@ int playerExists(tGame game, char *playerName, tPlayer *player)
 // TODO : debug segmentation fault
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
+	/*
+	variables;
+	lock(m);
+	--- Podemos hacer una lista de espera por orden de llegasa o que sea la guerra
+	while(!foundAvailableGame)
+		processCondition.wait(m, p);
+
+	do shit 	
+
+	processCondition.broadcast(p);
+	unlock(m);
+	 */
+
+
 	int gameIndex;
 	int foundAvailableGame = FALSE;
 

@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 	// Game loop
 	while (1)
 	{
-		//soap_call_blackJackns__getGameStatus(&soap, serverURL, "", gameId, playerName, &gameStatus, &resCode);
+		soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus, &resCode);
 		sleep(5);
 	}
 
