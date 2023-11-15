@@ -99,8 +99,11 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			pthread_mutex_lock(&games[gameIndex].mutex);
 			if (!playerExists(games[gameIndex], playerName.msg))
 				gameFound = TRUE;
-			else 
+			else
+			{
 				pthread_mutex_unlock(&games[gameIndex].mutex);
+				gameIndex++;
+			}
 		}
 		else
 			gameIndex++;
@@ -130,10 +133,8 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
 
 	// Register the player in the game
-	player = getPosition(games[gameIndex], playerName.msg);
-	player++; player %= 2;
 	printf("player: %d\n", player);
-	if (player == player1)
+	if (gameStatus[gameIndex] == player1)
 		strcpy(games[gameIndex].player1Name, playerName.msg);
 	else
 		strcpy(games[gameIndex].player2Name, playerName.msg);
@@ -311,22 +312,9 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 	return points;
 }
 
-int playerExists(tGame game, char *playerName, tPlayer *player)
+int playerExists(tGame game, char *playerName)
 {
-	*player = player1;
-	if (strcmp(game.player1Name, playerName) == 0)
-	{
-		*player = player1;
-		return TRUE;
-	}
-	else if (strcmp(game.player2Name, playerName) == 0)
-	{
-		*player = player2;
-		return TRUE;
-	}
-	else
-		return FALSE;
-
+	return (strcmp(game.player1Name, playerName) == 0 || strcmp(game.player2Name, playerName) == 0);
 }
 
 void *processRequest(void *soap)
