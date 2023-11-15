@@ -107,12 +107,13 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 
 
 	pthread_mutex_lock(&s);
-	while (gameStatus[gameIndex] != gameReady || gameIndex < MAX_GAMES)
+	while (gameStatus[gameIndex] == gameReady && gameIndex < MAX_GAMES)
 	{
 		++gameIndex;
 	}
+	printf("gameIndex: %d\n", gameIndex);
 	// If there is no empty game, return ERROR_SERVER_FULL
-	if (gameIndex + 1 == MAX_GAMES)
+	if (gameIndex >= MAX_GAMES)
 	{
 		*result = ERROR_SERVER_FULL;
 		if (DEBUG_SERVER)
