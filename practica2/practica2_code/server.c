@@ -6,22 +6,6 @@ tGameState gameStatus[MAX_GAMES];
 
 /** Mutex to protect the shared array. */
 pthread_mutex_t s; /* mutex for the statuses */
-pthread_mutex_t n; /* mutex for the names */
-
-void *processRequest(void *soap)
-{
-	pthread_detach(pthread_self());
-
-	printf("Processing a new request...");
-
-	soap_serve((struct soap *)soap);
-	soap_destroy((struct soap *)soap);
-	soap_end((struct soap *)soap);
-	soap_done((struct soap *)soap);
-	free(soap);
-
-	return NULL;
-}
 
 int main(int argc, char **argv)
 {
@@ -95,7 +79,7 @@ int main(int argc, char **argv)
 }
 
 /*
-varibles a bloquear array de status y array de nombres 
+varibles a bloquear array de status y array de nombres
 lock statuses s
 lock names n
 */
@@ -103,59 +87,62 @@ lock names n
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex = 0;
-
+	int gameFound = FALSE;
+	tPlayer player;
 
 	pthread_mutex_lock(&s);
-	while (gameStatus[gameIndex] == gameReady && gameIndex < MAX_GAMES)
+	while (gameIndex < MAX_GAMES && !gameFound)
 	{
-		++gameIndex;
+		if (gameStatus[gameIndex] != gameReady)
+		{
+			// Check if the player name already exists in the server
+			pthread_mutex_lock(&games[gameIndex].mutex);
+			gameFound = !playerExists(games[gameIndex], playerName.msg, &player);
+			pthread_mutex_unlock(&games[gameIndex].mutex);
+		}
+		else
+			gameIndex++;
 	}
-	printf("gameIndex: %d\n", gameIndex);
+	if (DEBUG_SERVER)
+		printf("gameIndex: %d\n", gameIndex);
+
+	// If the player name already exists, return ERROR_NAME_REPEATED
+	if (!gameFound)
+	{
+		*result = ERROR_NAME_REPEATED;
+		if (DEBUG_SERVER)
+			printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
+		return SOAP_ERR;
+	}
+
 	// If there is no empty game, return ERROR_SERVER_FULL
 	if (gameIndex >= MAX_GAMES)
 	{
 		*result = ERROR_SERVER_FULL;
 		if (DEBUG_SERVER)
 			printf("[Register] No empty games\n");
-		return SOAP_OK;
+		return SOAP_ERR;
 	}
+
 	if (DEBUG_SERVER)
 		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
-	pthread_mutex_unlock(&s);
 
-	// pthread_mutex_lock(&s); TODO aqui hago un lock del mutex de lo de status -------------------------------
-	// Set \0 at the end of the string
-	//playerName.msg[playerName.__size] = 0;
-
-	// pthread_mutex_lock(&n);  TODO aqui hago un lock del mutex de lo de status -------------------------------
-	/* Check if the player name already exists in the server
-	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
-	{
-		if (playerExists(games[gameIndex], playerName.msg, player))
-		{
-			*result = ERROR_NAME_REPEATED;
-			if (DEBUG_SERVER)
-				printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
-			return SOAP_OK;
-		}
-	}
-	
-	// If the player name does not exist, register it in the first empty game
+	// Register the player in the game
 	if (player == player1)
-		strcpy(games[gameNotFull].player1Name, playerName.msg);
+		strcpy(games[gameIndex].player1Name, playerName.msg);
 	else
-		strcpy(games[gameNotFull].player2Name, playerName.msg);
+		strcpy(games[gameIndex].player2Name, playerName.msg);
 
-	*result = gameNotFull;
+	*result = gameIndex;
+	gameStatus[gameIndex]++;
 
-	// TODO pthread_mutex_unlock(&n); aqui hago unlock del mutex de lo de status --------------------------------
 	if (DEBUG_SERVER)
 	{
-		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameNotFull);
-		printf("[Register] Game [%d] status: %d\n", gameNotFull, gameStatus[gameNotFull]);
+		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameIndex);
+		printf("[Register] Game [%d] status: %d\n", gameIndex, gameStatus[gameIndex]);
 	}
 
-	*/
+	pthread_mutex_unlock(&s);
 	return SOAP_OK;
 }
 
@@ -325,4 +312,19 @@ int playerExists(tGame game, char *playerName, tPlayer *player)
 	}
 	else
 		return FALSE;
+}
+
+void *processRequest(void *soap)
+{
+	pthread_detach(pthread_self());
+
+	printf("Processing a new request...\n");
+
+	soap_serve((struct soap *)soap);
+	soap_destroy((struct soap *)soap);
+	soap_end((struct soap *)soap);
+	soap_done((struct soap *)soap);
+	free(soap);
+
+	return NULL;
 }

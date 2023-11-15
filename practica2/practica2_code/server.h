@@ -46,6 +46,8 @@ typedef struct game
 {
 	tPlayer currentPlayer; /** Current player */
 
+	pthread_mutex_t mutex; /** Mutex to control access to the game */
+
 	xsd__string player1Name;		/** Name of player 1 */
 	blackJackns__tDeck player1Deck; /** Player1's deck */
 	unsigned int player1Bet;		/** Player1's bet */
@@ -58,6 +60,8 @@ typedef struct game
 
 	blackJackns__tDeck gameDeck; /** Main deck */
 	int endOfGame;				 /** Flag to control the end of the game */
+
+	tGameState status; /** Game status */
 
 } tGame;
 
@@ -132,3 +136,8 @@ unsigned int calculatePoints(blackJackns__tDeck *deck);
  * @return if player exists
  */
  int playerExists(tGame game, char *playerName, tPlayer *player);
+
+/*
+
+*/
+void *processRequest(void *soap);
