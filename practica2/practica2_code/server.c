@@ -99,11 +99,10 @@ varibles a bloquear array de status y array de nombres
 lock statuses s
 lock names n
 */
+
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex = 0;
-	int foundAvailableGame = FALSE;
-	int gameNotFull = 0;
 
 
 	pthread_mutex_lock(&s);
