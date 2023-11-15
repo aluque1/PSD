@@ -35,7 +35,6 @@ int main(int argc, char **argv)
 	do
 	{
 		printf("Enter your name: ");
-		playerName.msg = (xsd__string)malloc(STRING_LENGTH);
 		fgets(playerName.msg, STRING_LENGTH - 1, stdin);
 		playerName.msg[strlen(playerName.msg) - 1] = '\0';
 		playerName.__size = strlen(playerName.msg);

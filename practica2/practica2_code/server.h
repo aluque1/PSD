@@ -135,7 +135,7 @@ unsigned int calculatePoints(blackJackns__tDeck *deck);
  * @param playerName Player name.
  * @return if player exists
  */
- int playerExists(tGame game, char *playerName, tPlayer *player);
+int playerExists(tGame game, char *playerName, tPlayer *player);
 
 /*
 

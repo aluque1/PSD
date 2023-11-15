@@ -88,7 +88,7 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 {
 	int gameIndex = 0;
 	int gameFound = FALSE;
-	tPlayer player;
+	tPlayer player = player1;
 
 	pthread_mutex_lock(&s);
 	while (gameIndex < MAX_GAMES && !gameFound)
@@ -97,8 +97,10 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		{
 			// Check if the player name already exists in the server
 			pthread_mutex_lock(&games[gameIndex].mutex);
-			gameFound = !playerExists(games[gameIndex], playerName.msg, &player);
-			pthread_mutex_unlock(&games[gameIndex].mutex);
+			if (!playerExists(games[gameIndex], playerName.msg))
+				gameFound = TRUE;
+			else 
+				pthread_mutex_unlock(&games[gameIndex].mutex);
 		}
 		else
 			gameIndex++;
@@ -128,6 +130,9 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
 
 	// Register the player in the game
+	player = getPosition(games[gameIndex], playerName.msg);
+	player++; player %= 2;
+	printf("player: %d\n", player);
 	if (player == player1)
 		strcpy(games[gameIndex].player1Name, playerName.msg);
 	else
@@ -138,10 +143,18 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 
 	if (DEBUG_SERVER)
 	{
-		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameIndex);
-		printf("[Register] Game [%d] status: %d\n", gameIndex, gameStatus[gameIndex]);
+		printf("[Register] Player [%s] registered in [%d] game [%d]\n", playerName.msg, player, gameIndex);
+		printf("################ CURRENT GAME STATUS ################\n");
+		for (int i = 0; i < MAX_GAMES; i++)
+		{
+			printf("\n[Register] Game [%d] player1[%s]\n", i, games[i].player1Name);
+			printf("[Register] Game [%d] player2[%s]\n", i, games[i].player2Name);
+			printf("gameStatus[%d]: %d\n", i, gameStatus[i]);
+		}
+		printf("\n\n");
 	}
 
+	pthread_mutex_unlock(&games[gameIndex].mutex);
 	pthread_mutex_unlock(&s);
 	return SOAP_OK;
 }
@@ -300,6 +313,7 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 
 int playerExists(tGame game, char *playerName, tPlayer *player)
 {
+	*player = player1;
 	if (strcmp(game.player1Name, playerName) == 0)
 	{
 		*player = player1;
@@ -312,6 +326,7 @@ int playerExists(tGame game, char *playerName, tPlayer *player)
 	}
 	else
 		return FALSE;
+
 }
 
 void *processRequest(void *soap)
