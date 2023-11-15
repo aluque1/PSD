@@ -1,5 +1,4 @@
 #include "server.h"
-#include <pthread.h>
 
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
@@ -93,6 +92,105 @@ int main(int argc, char **argv)
 	// Detach SOAP environment
 	soap_done(&soap);
 	return 0;
+}
+
+/*
+varibles a bloquear array de status y array de nombres 
+lock statuses s
+lock names n
+*/
+int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
+{
+	int gameIndex = 0;
+	int foundAvailableGame = FALSE;
+	int gameNotFull = 0;
+
+
+	pthread_mutex_lock(&s);
+	while (gameStatus[gameIndex] != gameReady || gameIndex < MAX_GAMES)
+	{
+		++gameIndex;
+	}
+	// If there is no empty game, return ERROR_SERVER_FULL
+	if (gameIndex + 1 == MAX_GAMES)
+	{
+		*result = ERROR_SERVER_FULL;
+		if (DEBUG_SERVER)
+			printf("[Register] No empty games\n");
+		return SOAP_OK;
+	}
+	if (DEBUG_SERVER)
+		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
+	pthread_mutex_unlock(&s);
+
+	// pthread_mutex_lock(&s); TODO aqui hago un lock del mutex de lo de status -------------------------------
+	// Set \0 at the end of the string
+	//playerName.msg[playerName.__size] = 0;
+
+	// pthread_mutex_lock(&n);  TODO aqui hago un lock del mutex de lo de status -------------------------------
+	/* Check if the player name already exists in the server
+	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
+	{
+		if (playerExists(games[gameIndex], playerName.msg, player))
+		{
+			*result = ERROR_NAME_REPEATED;
+			if (DEBUG_SERVER)
+				printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
+			return SOAP_OK;
+		}
+	}
+	
+	// If the player name does not exist, register it in the first empty game
+	if (player == player1)
+		strcpy(games[gameNotFull].player1Name, playerName.msg);
+	else
+		strcpy(games[gameNotFull].player2Name, playerName.msg);
+
+	*result = gameNotFull;
+
+	// TODO pthread_mutex_unlock(&n); aqui hago unlock del mutex de lo de status --------------------------------
+	if (DEBUG_SERVER)
+	{
+		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameNotFull);
+		printf("[Register] Game [%d] status: %d\n", gameNotFull, gameStatus[gameNotFull]);
+	}
+
+	*/
+	return SOAP_OK;
+}
+
+int blackJackns__getStatus(struct soap *soap, int gameID, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock, int *result)
+{
+	int gameIndex;
+	int playerIndex;
+	int playerFound = FALSE;
+	int playerPos;
+
+	// Set \0 at the end of the string
+	playerName.msg[playerName.__size] = 0;
+
+	if (DEBUG_SERVER)
+		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameID);
+
+	/* if (playerExists(gameID, playerName.msg, &playerIndex, &playerPos))
+	{
+		if(playerPos == 1)
+			copyGameStatusStructure(&gameBlock, games[gameID].player1Name, games[gameID].player1Deck, games[gameID].player1Bet);
+		else
+			copyGameStatusStructure(&gameBlock, games[gameID].player2Name, games[gameID].player2Deck, games[gameID].player2Bet);
+
+		*result = games[gameID].status;
+		if (DEBUG_SERVER)
+			printf("[GetStatus] Status is [%d] for player [%s] in game [%d]\n", result, playerName.msg, gameID);
+	}
+	else
+	{
+		*result = ERROR_PLAYER_NOT_FOUND;
+		if (DEBUG_SERVER)
+			printf("[GetStatus] Player [%s] not found in game [%d]\n", playerName.msg, gameID);
+	} */
+
+	return SOAP_OK;
 }
 
 void initGame(tGame *game, tGameState *status)
@@ -227,139 +325,4 @@ int playerExists(tGame game, char *playerName, tPlayer *player)
 	}
 	else
 		return FALSE;
-}
-
-/*
-varibles a bloquear array de status y array de nombres 
-lock statuses s
-lock names n
-*/
-int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
-{
-	/*
-	variables;
-	int gameIndex;
-	int foundAvailableGame = FALSE;
-	int gameNotFull;
-
-
-	lock(s);
-	while (!foundAvailableGame || gameIndex < MAX_GAMES)
-	{
-		if (gameStatus[gameIndex] != gameReady)
-		{
-			foundAvailableGame = TRUE;
-			gameNotFull = gameIndex;
-		}
-		else
-			++gameIndex;
-	}
-	--- Podemos hacer una lista de espera por orden de llegasa o que sea la guerra
-	while(!foundAvailableGame)
-		processCondition.wait(m, p);
-
-	do shit 	
-
-	processCondition.broadcast(p);
-	unlock(m);
-	 */
-
-	int gameIndex = 0;
-	int foundAvailableGame = FALSE;
-
-	int gameNotFull;
-	int player;
-
-	// pthread_mutex_lock(&s); TODO aqui hago un lock del mutex de lo de status -------------------------------
-	// Set \0 at the end of the string
-	playerName.msg[playerName.__size] = 0;
-
-	if (DEBUG_SERVER)
-		printf("[Register] Registering new player -> [%s]\n", playerName.msg);
-
-	// First check to see the first empty game
-	while (!foundAvailableGame || gameIndex < MAX_GAMES)
-	{
-		if (gameStatus[gameIndex] != gameReady)
-		{
-			foundAvailableGame = TRUE;
-			gameNotFull = gameIndex;
-		}
-		else
-			++gameIndex;
-	}
-
-	// pthread_mutex_unlock(&s); TODO aqui hago unlock del mutex de lo de status --------------------------------
-
-	// If there is no empty game, return ERROR_SERVER_FULL
-	if (gameIndex + 1 == MAX_GAMES)
-	{
-		*result = ERROR_SERVER_FULL;
-		if (DEBUG_SERVER)
-			printf("[Register] No empty games\n");
-		return SOAP_OK;
-	}
-
-	// pthread_mutex_lock(&n);  TODO aqui hago un lock del mutex de lo de status -------------------------------
-	// Check if the player name already exists in the server
-	for (gameIndex = 0; gameIndex < MAX_GAMES; ++gameIndex)
-	{
-		if (playerExists(games[gameIndex], playerName.msg, player))
-		{
-			*result = ERROR_NAME_REPEATED;
-			if (DEBUG_SERVER)
-				printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
-			return SOAP_OK;
-		}
-	}
-	
-	// If the player name does not exist, register it in the first empty game
-	if (player == player1)
-		strcpy(games[gameNotFull].player1Name, playerName.msg);
-	else
-		strcpy(games[gameNotFull].player2Name, playerName.msg);
-
-	*result = gameNotFull;
-
-	// TODO pthread_mutex_unlock(&n); aqui hago unlock del mutex de lo de status --------------------------------
-	if (DEBUG_SERVER)
-	{
-		printf("[Register] Player [%s] registered in game [%d]\n", playerName.msg, gameNotFull);
-		printf("[Register] Game [%d] status: %d\n", gameNotFull, gameStatus[gameNotFull]);
-	}
-	return SOAP_OK;
-}
-
-int blackJackns__getStatus(struct soap *soap, int gameID, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock, int *result)
-{
-	int gameIndex;
-	int playerIndex;
-	int playerFound = FALSE;
-	int playerPos;
-
-	// Set \0 at the end of the string
-	playerName.msg[playerName.__size] = 0;
-
-	if (DEBUG_SERVER)
-		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameID);
-
-	/* if (playerExists(gameID, playerName.msg, &playerIndex, &playerPos))
-	{
-		if(playerPos == 1)
-			copyGameStatusStructure(&gameBlock, games[gameID].player1Name, games[gameID].player1Deck, games[gameID].player1Bet);
-		else
-			copyGameStatusStructure(&gameBlock, games[gameID].player2Name, games[gameID].player2Deck, games[gameID].player2Bet);
-
-		*result = games[gameID].status;
-		if (DEBUG_SERVER)
-			printf("[GetStatus] Status is [%d] for player [%s] in game [%d]\n", result, playerName.msg, gameID);
-	}
-	else
-	{
-		*result = ERROR_PLAYER_NOT_FOUND;
-		if (DEBUG_SERVER)
-			printf("[GetStatus] Player [%s] not found in game [%d]\n", playerName.msg, gameID);
-	} */
-
-	return SOAP_OK;
 }
