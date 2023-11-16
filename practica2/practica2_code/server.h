@@ -10,7 +10,7 @@
 #define MAX_GAMES 5
 
 /** Initial stack for each player */
-#define INITIAL_STACK 1
+#define INITIAL_STACK 5 // TODO esto estaba a 1
 
 /** Default bet */
 #define DEFAULT_BET 1
@@ -46,16 +46,17 @@ typedef struct game
 {
 	tPlayer currentPlayer; /** Current player */
 
-	pthread_mutex_t mutex; /** Mutex to control access to the game */
+	pthread_mutex_t g_mutex; /** Mutex to control access to the game */
+	pthread_cond_t g_cond;   /** Condition to control access to the game */
 
 	xsd__string player1Name;		/** Name of player 1 */
 	blackJackns__tDeck player1Deck; /** Player1's deck */
-	unsigned int player1Bet;		/** Player1's bet */
+	// TODO redundante unsigned int player1Bet;		/** Player1's bet */
 	unsigned int player1Stack;		/** Player1's stack */
 
 	xsd__string player2Name;		/** Name of player 2 */
 	blackJackns__tDeck player2Deck; /** Player2's deck */
-	unsigned int player2Bet;		/** Player2's bet */
+	// TODO redundante unsigned int player2Bet;		/** Player2's bet */
 	unsigned int player2Stack;		/** Player2's stack */
 
 	blackJackns__tDeck gameDeck; /** Main deck */
@@ -111,6 +112,14 @@ tPlayer calculateNextPlayer(tPlayer currentPlayer);
 unsigned int getRandomCard(blackJackns__tDeck *deck);
 
 /**
+* Inserts the card to the deck
+* 
+* @param deck Deck where the card is inserted
+* @param card The card to add to the deck
+*/
+void insertCard(blackJackns__tDeck *deck, unsigned int card);
+
+/**
  * Copies the data to be sent in a blackJackns__tBlock structure.
  *
  * @param status Structure where the data is copied.
@@ -136,6 +145,13 @@ unsigned int calculatePoints(blackJackns__tDeck *deck);
  * @return if player exists
  */
 int playerExists(tGame game, char *playerName);
+
+/**
+ * Splits the chips accordingly to each player
+ *
+ * @param game Game to be checked.
+ */
+void splitChip(tGame game);
 
 /*
 

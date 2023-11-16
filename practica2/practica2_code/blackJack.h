@@ -78,8 +78,10 @@ typedef struct tBlock
 	
 	-[x] int blackJackns__register(blackJackns__tMessage playerName, int *result);
 	-[] int blackJackns__getStatus(int gameID, blackJackns__tMessage playerName, int *result);
-	-[] int blackJackns__playerMove(int gameID, blackJackns__tMessage playerName, int *result);
+	-[] int blackJackns__playerMove(int gameID, blackJackns__tMessage playerName, int *result); 
  */
 int blackJackns__register(blackJackns__tMessage playerName, int *result);
 
-int blackJackns__getStatus(int gameID, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock, int *result);
+int blackJackns__getStatus(int gameIndex, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock);
+
+int blackJackns__playerMove(int gameIndex, blackJackns__tMessage playerName, int code, blackJackns__tBlock *gameBlock);

@@ -38,7 +38,7 @@ char cardNumberToChar(unsigned int number);
 void printDeck(blackJackns__tDeck *deck);
 
 /**
- * Prints a deck in a fancy way :)
+ * Prints a deck in a fancy way :).
  *
  * @param deck Deck to be shown.
  */
