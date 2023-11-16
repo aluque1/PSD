@@ -211,9 +211,6 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		copyGameStatusStructure(gameBlock, games[gameIndex].player2Name, &(games[gameIndex].player2Deck), TURN_PLAY);
 	}
 
-	pthread_cond_signal(&games[gameIndex].g_cond);
-	pthread_mutex_unlock(&games[gameIndex].g_mutex);
-
 	return SOAP_OK;
 }
 
@@ -255,6 +252,9 @@ int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMess
 	}
 
 	games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
+	
+	pthread_cond_signal(&games[gameIndex].g_cond);
+	pthread_mutex_unlock(&games[gameIndex].g_mutex);
 
 	return SOAP_OK;
 
