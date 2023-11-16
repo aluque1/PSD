@@ -6,6 +6,7 @@ tGameState gameStatus[MAX_GAMES];
 
 /** Mutex to protect the shared status array. */
 pthread_mutex_t s; /* mutex for the statuses */
+pthread_cond_t c;  /* condition variable for the statuses */
 
 int main(int argc, char **argv)
 {
@@ -83,17 +84,13 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	int gameIndex = 0;
 	int gameFound = FALSE;
 	tPlayer player = player1;
+	
+	// Set \0 at the end of the string
+	playerName.msg[playerName.__size] = 0;
 
 	pthread_mutex_lock(&s);
 	while (gameIndex < MAX_GAMES && !gameFound)
 	{
-		/*
-		while (gameStatus[gameIndex] != gameReady)
-		{
-			gameIndex++;
-			pthread_cond_wait(&games[gameIndex].g_cond, &games[gameIndex].g_mutex);
-		}
-		*/
 		if (gameStatus[gameIndex] != gameReady)
 		{
 			// Check if the player name already exists in the server
@@ -103,8 +100,8 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			else
 			{
 				gameIndex++;
-				pthread_mutex_unlock(&games[gameIndex].g_mutex);
 			}
+			pthread_mutex_unlock(&games[gameIndex].g_mutex);
 		}
 		else
 			gameIndex++;
@@ -157,7 +154,9 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	}
 
 	pthread_mutex_unlock(&games[gameIndex].g_mutex);
+	pthread_cond_signal(&games[gameIndex].g_cond);
 	pthread_mutex_unlock(&s);
+	pthread_cond_signal(&c);
 	return SOAP_OK;
 }
 
@@ -171,10 +170,17 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
+	allocClearBlock(soap, status);
 	if (DEBUG_SERVER)
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
 
 	pthread_mutex_lock(&s);
+	while(gameStatus[gameIndex] != gameReady)
+	{
+		pthread_cond_wait(&c, &s);
+	}
+	pthread_mutex_unlock(&s);
+
 	pthread_mutex_lock(&games[gameIndex].g_mutex);
 
 	player = playerPos(games[gameIndex], playerName.msg);
@@ -184,7 +190,6 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 	}
 	while (player != games[gameIndex].currentPlayer)
 	{
-		pthread_mutex_unlock(&games[gameIndex].g_mutex);
 		pthread_cond_wait(&games[gameIndex].g_cond, &games[gameIndex].g_mutex);
 	}
 
@@ -210,7 +215,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		getStatus_aux(gameIndex, &(games[gameIndex].gameDeck), &(games[gameIndex].player2Deck), games[gameIndex].player2Stack, status);
 	}
 
-	pthread_mutex_unlock(&s);
+	pthread_mutex_unlock(&games[gameIndex].g_mutex);
 
 	return SOAP_OK;
 }
@@ -219,12 +224,7 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 	int code = 0;
 	char *message = malloc(STRING_LENGTH);
 
-	if (gameStatus[gameIndex] != gameReady)
-	{
-		code = TURN_WAIT;
-		strcpy(message, "WAITING FOR PLAYER\n");
-	}
-	else if (games[gameIndex].player1Stack == 0 || games[gameIndex].player2Stack == 0)
+	if (games[gameIndex].player1Stack == 0 || games[gameIndex].player2Stack == 0)
 	{
 		if (pStack == 0)
 		{
