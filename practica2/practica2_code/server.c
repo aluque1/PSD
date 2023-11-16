@@ -78,11 +78,6 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-/*
-TODO: detectar cuando es por full y cuando por nombre repetido
-	soltar cerrojo cuando ha
-*/
-
 int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, int *result)
 {
 	int gameIndex = 0;
@@ -98,22 +93,17 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			gameIndex++;
 			pthread_cond_wait(&games[gameIndex].g_cond, &games[gameIndex].g_mutex);
 		}
-
 		*/
-
 		if (gameStatus[gameIndex] != gameReady)
 		{
-			/*
-
-			*/
 			// Check if the player name already exists in the server
 			pthread_mutex_lock(&games[gameIndex].g_mutex);
 			if (!playerExists(games[gameIndex], playerName.msg))
 				gameFound = TRUE;
 			else
 			{
-				pthread_mutex_unlock(&games[gameIndex].g_mutex);
 				gameIndex++;
+				pthread_mutex_unlock(&games[gameIndex].g_mutex);
 			}
 		}
 		else
@@ -172,22 +162,27 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 }
 
 // hemos quitado int result
-int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, blackJackns__tBlock *gameBlock)
+int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, blackJackns__tBlock *status)
 {
 	int turn;
 	int resul = 0;
-
 	// Set \0 at the end of the string
-	// playerName.msg[playerName.__size] = 0;
-
+	playerName.msg[playerName.__size] = 0;
 	if (DEBUG_SERVER)
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
+
+	/* TODO
+		tambien he intentado hacer directamente esto:
+		copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_WAIT);
+		y comentar todo lo demas por si los mutex y demas nos daba el error, y no.
+		no se que le pasa, me quiero morir no puedo mas no he avanzado nada porque sin esto no logramos hacer nada
+	 */
 
 	pthread_mutex_lock(&games[gameIndex].g_mutex);
 	turn = playerPos(games[gameIndex], playerName.msg);
 	if (turn == ERROR_PLAYER_NOT_FOUND)
 	{
-		copyGameStatusStructure(gameBlock, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);
+		copyGameStatusStructure(status, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);
 	}
 	while (turn != games[gameIndex].currentPlayer)
 	{
@@ -202,15 +197,20 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 	{
 		insertCard(&(games[gameIndex].player1Deck), getRandomCard(&(games[gameIndex].gameDeck)));
 		insertCard(&(games[gameIndex].player1Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		copyGameStatusStructure(gameBlock, games[gameIndex].player1Name, &(games[gameIndex].player1Deck), TURN_PLAY);
+		if (gameStatus[gameIndex] == gameReady) // TODO : he metido esto para que no se quede en waiting hasta que entre otro jugador
+			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_PLAY); // TODO copyGameStatusStructure dasegfault xdxdxd
+		else
+			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_WAIT);
 	}
 	else
 	{
 		insertCard(&(games[gameIndex].player2Deck), getRandomCard(&(games[gameIndex].gameDeck)));
 		insertCard(&(games[gameIndex].player2Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		copyGameStatusStructure(gameBlock, games[gameIndex].player2Name, &(games[gameIndex].player2Deck), TURN_PLAY);
+		if (gameStatus[gameIndex] == gameReady) // TODO : he metido esto para que no se quede en waiting hasta que entre otro jugador
+			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player2Deck), TURN_PLAY);
+		else
+			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player2Deck), TURN_WAIT);
 	}
-
 	return SOAP_OK;
 }
 
@@ -239,7 +239,6 @@ int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMess
 		copyGameStatusStructure(gameBlock, games[gameIndex].player2Name, &(games[gameIndex].player2Deck), gameStatus[gameIndex]);
 	}
 
-
 	splitChip(games[gameIndex]);
 
 	// Check if the game is over
@@ -252,17 +251,15 @@ int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMess
 	}
 
 	games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
-	
+
 	pthread_cond_signal(&games[gameIndex].g_cond);
 	pthread_mutex_unlock(&games[gameIndex].g_mutex);
 
 	return SOAP_OK;
-
 }
 
-void playerMove_aux(int gameIndex,  int code, blackJackns__tBlock *gameBlock)
+void playerMove_aux(int gameIndex, int code, blackJackns__tBlock *gameBlock)
 {
-	
 }
 
 void initGame(tGame *game, tGameState *status)
@@ -358,7 +355,7 @@ void insertCard(blackJackns__tDeck *deck, unsigned int card)
 void copyGameStatusStructure(blackJackns__tBlock *status, char *message, blackJackns__tDeck *newDeck, int newCode)
 {
 	// Copy the message
-	memset((status->msgStruct).msg, 0, STRING_LENGTH);
+	memset((status->msgStruct).msg, 0, STRING_LENGTH); // TODO ES QUE ESTO DA SEGFAULT PORUQW ES DEL PROFE
 	strcpy((status->msgStruct).msg, message);
 	(status->msgStruct).__size = strlen((status->msgStruct).msg);
 
@@ -393,13 +390,16 @@ void splitChip(tGame game)
 	unsigned int p1Points = calculatePoints(&(game.player1Deck));
 	unsigned int p2Points = calculatePoints(&(game.player2Deck));
 
-	if(p1Points == 0 || p2Points == 0) return;
+	if (p1Points == 0 || p2Points == 0)
+		return;
 
-	if((p1Points > 21 || p1Points < p2Points) && p2Points <= 21){
+	if ((p1Points > 21 || p1Points < p2Points) && p2Points <= 21)
+	{
 		game.player1Stack -= DEFAULT_BET;
 		game.player2Stack += DEFAULT_BET;
 	}
-	else if((p2Points > 21 || p1Points > p2Points) && p1Points <= 21){
+	else if ((p2Points > 21 || p1Points > p2Points) && p1Points <= 21)
+	{
 		game.player1Stack += DEFAULT_BET;
 		game.player2Stack -= DEFAULT_BET;
 	}

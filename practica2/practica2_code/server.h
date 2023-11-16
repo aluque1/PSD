@@ -61,9 +61,6 @@ typedef struct game
 
 	blackJackns__tDeck gameDeck; /** Main deck */
 	int endOfGame;				 /** Flag to control the end of the game */
-
-	tGameState status; /** Game status */
-
 } tGame;
 
 /**

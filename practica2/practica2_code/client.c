@@ -2,7 +2,6 @@
 
 int main(int argc, char **argv)
 {
-
 	struct soap soap;				  /** Soap struct */
 	char *serverURL;				  /** Server URL */
 	blackJackns__tMessage playerName; /** Player name */
