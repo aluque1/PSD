@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	} while (resCode < 0);
 
 	// Game loop
-	while (1)
+	//while (1)
 	{
 		soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus);
 		printBlock(&gameStatus);

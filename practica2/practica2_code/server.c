@@ -167,9 +167,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 {
 	int turn;
 	int resul = 0;
-	blackJackns__tBlock *gameBlock;
-	gameBlock->deck.cards = (unsigned int *)malloc(DECK_SIZE * sizeof(unsigned int));
-	gameBlock->deck.__size = 0;
+	
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 	if (DEBUG_SERVER)
@@ -197,7 +195,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		if (gameStatus[gameIndex] == gameReady) // TODO : he metido esto para que no se quede en waiting hasta que entre otro jugador
 			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_PLAY); // TODO copyGameStatusStructure dasegfault xdxdxd
 		else
-			copyGameStatusStructure(gameBlock, "WAITING", &(games[gameIndex].player1Deck), TURN_WAIT);
+			copyGameStatusStructure(status, "WAITING", &(games[gameIndex].player1Deck), TURN_WAIT);
 	}
 	else
 	{
@@ -209,7 +207,6 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player2Deck), TURN_WAIT);
 	}
 
-	memcpy(status, gameBlock, sizeof(blackJackns__tBlock));
 	pthread_mutex_unlock(&games[gameIndex].g_mutex);
 
 	return SOAP_OK;
@@ -366,14 +363,14 @@ void copyGameStatusStructure(blackJackns__tBlock *status, char *message, blackJa
 	}
 
 	// Copy the message
-	status->msgStruct.msg = (xsd__string)malloc(STRING_LENGTH * sizeof(xsd__string));
-	memset((status->msgStruct).msg, 0, STRING_LENGTH);
+	status->msgStruct.msg = (xsd__string)malloc(STRING_LENGTH);
 	strcpy((status->msgStruct).msg, message);
 	(status->msgStruct).__size = strlen((status->msgStruct).msg);
 
 	// Copy the deck, only if it is not NULL
 	if (newDeck->__size > 0)
 	{
+		(status->deck).cards = (unsigned int *)malloc(DECK_SIZE * sizeof(unsigned int));
 		memcpy((status->deck).cards, newDeck->cards, DECK_SIZE * sizeof(unsigned int));
 	}
 	else
