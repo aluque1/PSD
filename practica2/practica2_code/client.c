@@ -58,14 +58,21 @@ int main(int argc, char **argv)
 	} while (resCode < 0);
 
 	// Game loop
-	//while (1)
+	while (gameStatus.code != GAME_LOSE && gameStatus.code != GAME_WIN)
 	{
 		soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus);
-		printBlock(&gameStatus);
+		printStatus(&gameStatus, DEBUG_CLIENT);
 		sleep(5);
+		while(gameStatus.code == TURN_PLAY)
+		{
+			readOption();
+			//soap_call_blackJackns__playerMove(/**/);			
+			printStatus(&gameStatus);
+		}
 	}
 
-	// Clean the environment
+	printf("%s", gameStatus.msgStruct.msg);
+
 	soap_destroy(&soap);
 	soap_end(&soap);
 	soap_done(&soap);

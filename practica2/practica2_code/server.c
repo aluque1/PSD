@@ -165,22 +165,26 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 
 int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, blackJackns__tBlock *status)
 {
-	int turn;
-	int resul = 0;
-	
+	int player;
+	int code = 0;
+	char *message;
+
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 	if (DEBUG_SERVER)
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
 
+	pthread_mutex_lock(&s);
 	pthread_mutex_lock(&games[gameIndex].g_mutex);
-	turn = playerPos(games[gameIndex], playerName.msg);
-	if (turn == ERROR_PLAYER_NOT_FOUND)
+
+	player = playerPos(games[gameIndex], playerName.msg);
+	if (player == ERROR_PLAYER_NOT_FOUND)
 	{
 		copyGameStatusStructure(status, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);
 	}
-	while (turn != games[gameIndex].currentPlayer)
+	while (player != games[gameIndex].currentPlayer)
 	{
+		pthread_mutex_unlock(&games[gameIndex].g_mutex);
 		pthread_cond_wait(&games[gameIndex].g_cond, &games[gameIndex].g_mutex);
 	}
 
@@ -188,30 +192,74 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		printf("[GetStatus] Player [%s] is playing in game [%d]\n", playerName.msg, gameIndex);
 
 	// Copy the game status
-	if (turn == player1)
+	/*
+
+	si esta ready comienza, sino manda waiting
+	comprueba si ha ganado o perdido
+	sino, inserta dos cartas en la mano del jugador
+	si es la partida ha terminado, manda win o lose. sino manda play
+
+	copiamos estructura y mandamos
+	*/
+	if (player == player1)
 	{
-		insertCard(&(games[gameIndex].player1Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		insertCard(&(games[gameIndex].player1Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		if (gameStatus[gameIndex] == gameReady) // TODO : he metido esto para que no se quede en waiting hasta que entre otro jugador
-			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_PLAY); // TODO copyGameStatusStructure dasegfault xdxdxd
-		else
-			copyGameStatusStructure(status, "WAITING", &(games[gameIndex].player1Deck), TURN_WAIT);
+		getStatus_aux(gameIndex, &(games[gameIndex].gameDeck), &(games[gameIndex].player1Deck), games[gameIndex].player1Stack, status);
 	}
 	else
 	{
-		insertCard(&(games[gameIndex].player2Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		insertCard(&(games[gameIndex].player2Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		if (gameStatus[gameIndex] == gameReady) // TODO : he metido esto para que no se quede en waiting hasta que entre otro jugador
-			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player2Deck), TURN_PLAY);
-		else
-			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player2Deck), TURN_WAIT);
+		getStatus_aux(gameIndex, &(games[gameIndex].gameDeck), &(games[gameIndex].player2Deck), games[gameIndex].player2Stack, status);
 	}
 
-	pthread_mutex_unlock(&games[gameIndex].g_mutex);
+	pthread_mutex_unlock(&s);
 
 	return SOAP_OK;
 }
+void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDeck *playerDeck, unsigned int pStack, blackJackns__tBlock *playerBlock)
+{
+	int code = 0;
+	char *message = malloc(STRING_LENGTH);
 
+	if (gameStatus[gameIndex] != gameReady)
+	{
+		code = TURN_WAIT;
+		strcpy(message, "WAITING FOR PLAYER\n");
+	}
+	else if (games[gameIndex].player1Stack == 0 || games[gameIndex].player2Stack == 0)
+	{
+		if (pStack == 0)
+		{
+			code = GAME_LOSE;
+			strcpy(message, "YOU LOSE\n");
+		}
+		else
+		{
+			code = GAME_WIN;
+			strcpy(message, "YOU WIN\n");
+		}
+	}
+	else
+	{
+		allocDeck(playerDeck, DECK_SIZE);
+		insertCard(playerDeck, getRandomCard(gameDeck));
+		insertCard(playerDeck, getRandomCard(gameDeck));
+		code = TURN_PLAY;
+		strcpy(message, "YOUR TURN\n");
+	}
+	copyGameStatusStructure(playerBlock, message, playerDeck, code);
+}
+
+/*
+primero mira si hit o stand.
+si hit da carta y comprueba si se ha pasado de 21
+si no se pasa, manda turn play y sigue jugando.
+
+si se pasa o hace stand, comprueba si el otro ha jugado o no.
+si el otro tiene cartas(ha jugado), hace splitchip.
+si el otro no tiene cartas, manda turn wait.
+
+pasa turno
+
+*/
 int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, int code, blackJackns__tBlock *gameBlock)
 {
 	int player;
@@ -219,36 +267,16 @@ int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMess
 	if (player == ERROR_PLAYER_NOT_FOUND)
 	{
 		copyGameStatusStructure(gameBlock, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);
+		return SOAP_OK;
 	}
 	else if (player == player1)
 	{
-		if (code == PLAYER_HIT_CARD)
-		{
-			insertCard(&(games[gameIndex].player1Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		}
-		copyGameStatusStructure(gameBlock, games[gameIndex].player1Name, &(games[gameIndex].player1Deck), gameStatus[gameIndex]);
+		playerMove_aux(code, gameIndex, &(games[gameIndex].gameDeck), &(games[gameIndex].player1Deck), gameBlock);
 	}
 	else
 	{
-		if (code == PLAYER_HIT_CARD)
-		{
-			insertCard(&(games[gameIndex].player2Deck), getRandomCard(&(games[gameIndex].gameDeck)));
-		}
-		copyGameStatusStructure(gameBlock, games[gameIndex].player2Name, &(games[gameIndex].player2Deck), gameStatus[gameIndex]);
+		playerMove_aux(code, gameIndex, &(games[gameIndex].gameDeck), &(games[gameIndex].player2Deck), gameBlock);
 	}
-
-	splitChip(games[gameIndex]);
-
-	// Check if the game is over
-	int p1code = TURN_PLAY;
-	int p2code = TURN_PLAY;
-	if (games[gameIndex].player1Stack == 0 || games[gameIndex].player2Stack == 0)
-	{
-		p1code = games[gameIndex].player1Stack == 0 ? GAME_LOSE : GAME_WIN;
-		p2code = games[gameIndex].player2Stack == 0 ? GAME_LOSE : GAME_WIN;
-	}
-
-	games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
 
 	pthread_cond_signal(&games[gameIndex].g_cond);
 	pthread_mutex_unlock(&games[gameIndex].g_mutex);
@@ -256,8 +284,44 @@ int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMess
 	return SOAP_OK;
 }
 
-void playerMove_aux(int gameIndex, int code, blackJackns__tBlock *gameBlock)
+/*
+primero mira si hit o stand.
+si hit da carta y comprueba si se ha pasado de 21
+si no se pasa, manda turn play y sigue jugando.
+
+si se pasa o hace stand, comprueba si el otro ha jugado o no.
+si el otro tiene cartas(ha jugado), hace splitchip.
+si el otro no tiene cartas, manda turn wait.
+
+pasa turno
+
+*/
+void playerMove_aux(int code, int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDeck *playerDeck, blackJackns__tBlock *playerBlock)
 {
+	char* message = malloc(STRING_LENGTH);
+	int code = 0;
+
+	if (code == PLAYER_HIT_CARD)
+	{
+		insertCard(playerDeck, getRandomCard(gameDeck));
+		if (calculatePoints(playerDeck) < 21) // esto no tiene que estar dentro del PLAYER_HIT_CARD ?? no se muy bien como estructurarlo en codido estoy pensando
+		{
+			code = TURN_PLAY;
+			strcpy(message, "YOUR TURN\n");
+		}
+	} //te falta algo aqui? o ya solo falta lo de pintar en el cliente
+
+	if (calculatePoints(playerDeck) > 21 || code == PLAYER_STAND)
+	{
+		code = TURN_WAIT;
+		strcpy(message, "Checking for the result...\n");
+		if (games[gameIndex].player1Deck.__size > 0 && games[gameIndex].player2Deck.__size > 0)
+		{
+			splitChip(games[gameIndex]);
+		}
+	}
+	copyGameStatusStructure(playerBlock, message, playerDeck, code);
+	games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
 }
 
 void initGame(tGame *game, tGameState *status)
@@ -375,7 +439,7 @@ void copyGameStatusStructure(blackJackns__tBlock *status, char *message, blackJa
 	}
 	else
 		(status->deck).cards = NULL;
-	
+
 	(status->deck).__size = newDeck->__size;
 
 	// Set the new code
