@@ -61,6 +61,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus);
+		printBlock(&gameStatus);
 		sleep(5);
 	}
 
@@ -69,6 +70,16 @@ int main(int argc, char **argv)
 	soap_end(&soap);
 	soap_done(&soap);
 	return 0;
+}
+
+void printBlock(blackJackns__tBlock *block)
+{
+	printf("Code: %d\n", block->code);
+	printf("Message: %s\n", block->msgStruct.msg);
+	printf("Deck: ");
+	for (int i = 0; i < block->deck.__size; i++)
+		printf("%d ", block->deck.cards[i]);
+	printf("\n");
 }
 
 unsigned int readBet()

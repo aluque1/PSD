@@ -162,21 +162,18 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 }
 
 // hemos quitado int result
+
 int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, blackJackns__tBlock *status)
 {
 	int turn;
 	int resul = 0;
+	blackJackns__tBlock *gameBlock;
+	gameBlock->deck.cards = (unsigned int *)malloc(DECK_SIZE * sizeof(unsigned int));
+	gameBlock->deck.__size = 0;
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 	if (DEBUG_SERVER)
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
-
-	/* TODO
-		tambien he intentado hacer directamente esto:
-		copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_WAIT);
-		y comentar todo lo demas por si los mutex y demas nos daba el error, y no.
-		no se que le pasa, me quiero morir no puedo mas no he avanzado nada porque sin esto no logramos hacer nada
-	 */
 
 	pthread_mutex_lock(&games[gameIndex].g_mutex);
 	turn = playerPos(games[gameIndex], playerName.msg);
@@ -200,7 +197,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		if (gameStatus[gameIndex] == gameReady) // TODO : he metido esto para que no se quede en waiting hasta que entre otro jugador
 			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_PLAY); // TODO copyGameStatusStructure dasegfault xdxdxd
 		else
-			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player1Deck), TURN_WAIT);
+			copyGameStatusStructure(gameBlock, "WAITING", &(games[gameIndex].player1Deck), TURN_WAIT);
 	}
 	else
 	{
@@ -211,6 +208,10 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		else
 			copyGameStatusStructure(status, playerName.msg, &(games[gameIndex].player2Deck), TURN_WAIT);
 	}
+
+	memcpy(status, gameBlock, sizeof(blackJackns__tBlock));
+	pthread_mutex_unlock(&games[gameIndex].g_mutex);
+
 	return SOAP_OK;
 }
 
@@ -354,21 +355,44 @@ void insertCard(blackJackns__tDeck *deck, unsigned int card)
 
 void copyGameStatusStructure(blackJackns__tBlock *status, char *message, blackJackns__tDeck *newDeck, int newCode)
 {
+
+	if (DEBUG_SERVER)
+	{
+		printf("[CopyGameStatusStructure] Copying game status structure...\n");
+		printf("[CopyGameStatusStructure] Message: %s\n", message);
+		printf("[CopyGameStatusStructure] Code: %d\n", newCode);
+		for (int i = 0; i < newDeck->__size; i++)
+			printf("[CopyGameStatusStructure] Deck[%d]: %d\n", i, newDeck->cards[i]);
+	}
+
 	// Copy the message
-	memset((status->msgStruct).msg, 0, STRING_LENGTH); // TODO ES QUE ESTO DA SEGFAULT PORUQW ES DEL PROFE
+	status->msgStruct.msg = (xsd__string)malloc(STRING_LENGTH * sizeof(xsd__string));
+	memset((status->msgStruct).msg, 0, STRING_LENGTH);
 	strcpy((status->msgStruct).msg, message);
 	(status->msgStruct).__size = strlen((status->msgStruct).msg);
 
 	// Copy the deck, only if it is not NULL
 	if (newDeck->__size > 0)
+	{
 		memcpy((status->deck).cards, newDeck->cards, DECK_SIZE * sizeof(unsigned int));
+	}
 	else
 		(status->deck).cards = NULL;
-
+	
 	(status->deck).__size = newDeck->__size;
 
 	// Set the new code
 	status->code = newCode;
+
+	if (DEBUG_SERVER)
+	{
+		printf("message: %s\n", status->msgStruct.msg);
+
+		for (int i = 0; i < status->deck.__size; i++)
+			printf("status->deck[%d]: %d\n", i, status->deck.cards[i]);
+
+		printf("status->code: %d\n", status->code);
+	}
 }
 
 unsigned int calculatePoints(blackJackns__tDeck *deck)
