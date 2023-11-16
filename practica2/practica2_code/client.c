@@ -66,8 +66,8 @@ int main(int argc, char **argv)
 		while(gameStatus.code == TURN_PLAY)
 		{
 			readOption();
-			//soap_call_blackJackns__playerMove(/**/);			
-			printStatus(&gameStatus);
+			soap_call_blackJackns__playerMove(&soap, serverURL, "", gameId, playerName, playerMove, &gameStatus);		
+			printStatus(&gameStatus, DEBUG_CLIENT);
 		}
 	}
 

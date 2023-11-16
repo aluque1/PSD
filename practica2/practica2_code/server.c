@@ -299,7 +299,7 @@ pasa turno
 void playerMove_aux(int code, int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDeck *playerDeck, blackJackns__tBlock *playerBlock)
 {
 	char* message = malloc(STRING_LENGTH);
-	int code = 0;
+	int code_aux = 0;
 
 	if (code == PLAYER_HIT_CARD)
 	{
@@ -341,6 +341,7 @@ void initGame(tGame *game, tGameState *status)
 
 	// Game status variables
 	game->endOfGame = FALSE;
+	game->currentPlayer= rand() % 2;
 	*status = gameEmpty;
 }
 
