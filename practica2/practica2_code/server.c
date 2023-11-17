@@ -171,6 +171,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 	allocClearBlock(soap, status);
+
 	if (DEBUG_SERVER)
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
 
@@ -263,7 +264,11 @@ pasa turno
 int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, int code, blackJackns__tBlock *gameBlock)
 {
 	int player;
+
 	player = playerPos(games[gameIndex], playerName.msg);
+	playerName.msg[playerName.__size] = 0;
+	allocClearBlock(soap, gameBlock);
+
 	if (player == ERROR_PLAYER_NOT_FOUND)
 	{
 		copyGameStatusStructure(gameBlock, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);

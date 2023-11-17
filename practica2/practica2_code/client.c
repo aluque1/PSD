@@ -19,6 +19,9 @@ int main(int argc, char **argv)
 	allocClearMessage(&soap, &(playerName));
 	allocClearBlock(&soap, &gameStatus);
 
+	// Set playerMove
+	playerMove = PLAYER_HIT_CARD;
+
 	// Check arguments
 	if (argc != 2)
 	{
