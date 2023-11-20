@@ -63,6 +63,14 @@ dkms.conf
 *.xml
 .vscode/
 
+# Compresed files
+*.7z
+*.zip
+*.rar
+*.gz
+*.tar
+*.tgz
+
 #gSoap generated files
 soapC.c
 soapClient.c

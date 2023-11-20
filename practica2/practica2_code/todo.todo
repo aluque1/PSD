@@ -1,0 +1,9 @@
+COMO USAR:
+    ☐ CTRL + Enter Crea un nuevo TODO (dale otra vez para deshacerlo)
+    ☐ ALT + D Lo marca como hecho (dale otra vez para deshacerlo)
+    ☐ ALT + C lo marca como cancelado (dale otra vez para deshacerlo)
+    ☐ ALT + S lo marca como empezado (dale otra vez para deshacerlo)
+    ☐ se usa @mecago para crear tags @critical @high @medium @low para ponerle prioridad
+
+Problemas Segmentacion:
+    ☐ Debug como un cosaco
