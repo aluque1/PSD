@@ -49,6 +49,9 @@ typedef struct game
 	pthread_mutex_t g_mutex; /** Mutex to control access to the game */
 	pthread_cond_t g_cond;   /** Condition to control access to the game */
 
+	pthread_mutex_t s_mutex; /** Mutex to control access to the status and names*/
+	pthread_cond_t s_cond;   /** Condition to control access to the status and names*/
+
 	xsd__string player1Name;		/** Name of player 1 */
 	blackJackns__tDeck player1Deck; /** Player1's deck */
 	// TODO redundante unsigned int player1Bet;		/** Player1's bet */
@@ -61,6 +64,8 @@ typedef struct game
 
 	blackJackns__tDeck gameDeck; /** Main deck */
 	int endOfGame;				 /** Flag to control the end of the game */
+
+	tGameState status; /** Game status */
 } tGame;
 
 /**
@@ -68,7 +73,7 @@ typedef struct game
  *
  * @param game Game to be initialized.
  */
-void initGame(tGame *game, tGameState *status);
+void initGame(tGame *game);
 
 /**
  * Initialize server structures and alloc memory.

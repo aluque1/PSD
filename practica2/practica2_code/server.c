@@ -2,11 +2,6 @@
 
 /** Shared array that contains all the games. */
 tGame games[MAX_GAMES];
-tGameState gameStatus[MAX_GAMES];
-
-/** Mutex to protect the shared status array. */
-pthread_mutex_t s; /* mutex for the statuses */
-pthread_cond_t c;  /* condition variable for the statuses */
 
 int main(int argc, char **argv)
 {
@@ -83,47 +78,43 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 {
 	int gameIndex = 0;
 	int gameFound = FALSE;
+	int availableGame = FALSE;
 	tPlayer player = player1;
 	
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 
-	pthread_mutex_lock(&s);
-	while (gameIndex < MAX_GAMES && !gameFound)
+	do
 	{
-		if (gameStatus[gameIndex] != gameReady)
+		pthread_mutex_lock(&games[gameIndex].s_mutex);
+		if (games[gameIndex].status != gameReady)
 		{
-			// Check if the player name already exists in the server
-			pthread_mutex_lock(&games[gameIndex].g_mutex);
+			availableGame = TRUE;
+			// Check if the player name already exists in the game
 			if (!playerExists(games[gameIndex], playerName.msg))
-				gameFound = TRUE;
-			else
 			{
-				gameIndex++;
+				gameFound = TRUE; break;
 			}
-			pthread_mutex_unlock(&games[gameIndex].g_mutex);
 		}
-		else
-			gameIndex++;
-	}
+		pthread_mutex_unlock(&games[gameIndex].s_mutex);
+	}while (gameIndex++ < MAX_GAMES && !gameFound);
 	if (DEBUG_SERVER)
 		printf("gameIndex: %d\n", gameIndex);
 
-	// If the player name already exists, return ERROR_NAME_REPEATED
-	if (!gameFound)
-	{
-		*result = ERROR_NAME_REPEATED;
-		if (DEBUG_SERVER)
-			printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
-		return SOAP_OK;
-	}
-
 	// If there is no empty game, return ERROR_SERVER_FULL
-	if (gameIndex >= MAX_GAMES)
+	if (!availableGame)
 	{
 		*result = ERROR_SERVER_FULL;
 		if (DEBUG_SERVER)
 			printf("[Register] No empty games\n");
+		return SOAP_OK;
+	}
+	// If the player name already exists, return ERROR_NAME_REPEATED
+	if (!gameFound && availableGame)
+	{
+		*result = ERROR_NAME_REPEATED;
+		if (DEBUG_SERVER)
+			printf("[Register] Player name [%s] already exists in game [%d]\n", playerName.msg, gameIndex);
 		return SOAP_OK;
 	}
 
@@ -132,13 +123,13 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 
 	// Register the player in the game
 	printf("player: %d\n", player);
-	if (gameStatus[gameIndex] == player1)
+	if (games[gameIndex].status == player1)
 		strcpy(games[gameIndex].player1Name, playerName.msg);
 	else
 		strcpy(games[gameIndex].player2Name, playerName.msg);
 
 	*result = gameIndex;
-	gameStatus[gameIndex]++;
+	games[gameIndex].status++;
 
 	if (DEBUG_SERVER)
 	{
@@ -148,15 +139,12 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		{
 			printf("\n[Register] Game [%d] player1[%s]\n", i, games[i].player1Name);
 			printf("[Register] Game [%d] player2[%s]\n", i, games[i].player2Name);
-			printf("gameStatus[%d]: %d\n", i, gameStatus[i]);
+			printf("gameStatus[%d]: %d\n", i, games[gameIndex].status);
 		}
 		printf("\n\n");
 	}
 
-	pthread_mutex_unlock(&games[gameIndex].g_mutex);
-	pthread_cond_signal(&games[gameIndex].g_cond);
-	pthread_mutex_unlock(&s);
-	pthread_cond_signal(&c);
+	pthread_mutex_unlock(&games[gameIndex].s_mutex);
 	return SOAP_OK;
 }
 
@@ -176,7 +164,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
 
 	pthread_mutex_lock(&s);
-	while(gameStatus[gameIndex] != gameReady)
+	while(games[gameIndex].status != gameReady)
 	{
 		pthread_cond_wait(&c, &s);
 	}
@@ -329,7 +317,7 @@ void playerMove_aux(int code, int gameIndex, blackJackns__tDeck *gameDeck, black
 	games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
 }
 
-void initGame(tGame *game, tGameState *status)
+void initGame(tGame *game)
 {
 	// Init players' name
 	memset(game->player1Name, 0, STRING_LENGTH);
@@ -346,8 +334,8 @@ void initGame(tGame *game, tGameState *status)
 
 	// Game status variables
 	game->endOfGame = FALSE;
+	game->status = gameReady;
 	game->currentPlayer= rand() % 2;
-	*status = gameEmpty;
 }
 
 void initServerStructures(struct soap *soap)
@@ -366,7 +354,7 @@ void initServerStructures(struct soap *soap)
 		allocDeck(soap, &(games[i].player1Deck));
 		allocDeck(soap, &(games[i].player2Deck));
 		allocDeck(soap, &(games[i].gameDeck));
-		initGame(&(games[i]), &(gameStatus[i]));
+		initGame(&(games[i]));
 	}
 }
 
