@@ -139,7 +139,7 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 		{
 			printf("\n[Register] Game [%d] player1[%s]\n", i, games[i].player1Name);
 			printf("[Register] Game [%d] player2[%s]\n", i, games[i].player2Name);
-			printf("gameStatus[%d]: %d\n", i, games[gameIndex].status);
+			printf("gameStatus[%d]: %d\n", i, games[i].status);
 		}
 		printf("\n\n");
 	}
@@ -163,23 +163,28 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 	if (DEBUG_SERVER)
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
 
-	pthread_mutex_lock(&s);
-	while(games[gameIndex].status != gameReady)
+	pthread_mutex_lock(&games[gameIndex].s_mutex);
+	if (games[gameIndex].status != gameReady)
 	{
-		pthread_cond_wait(&c, &s);
+		copyGameStatusStructure(status, "Waiting for another player", &status->deck, TURN_WAIT);
+		pthread_mutex_unlock(&games[gameIndex].s_mutex);
+		return SOAP_OK;
 	}
-	pthread_mutex_unlock(&s);
 
-	pthread_mutex_lock(&games[gameIndex].g_mutex);
-
+	// Check if the player name already exists in the game
 	player = playerPos(games[gameIndex], playerName.msg);
 	if (player == ERROR_PLAYER_NOT_FOUND)
 	{
-		copyGameStatusStructure(status, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);
+		copyGameStatusStructure(status, "Player not found", &status->deck, ERROR_PLAYER_NOT_FOUND);
 	}
-	while (player != games[gameIndex].currentPlayer)
+
+	// Check if it is the player's turn
+	pthread_mutex_lock(&games[gameIndex].g_mutex);
+	while ((player != games[gameIndex].currentPlayer))
 	{
+		pthread_mutex_unlock(&games[gameIndex].s_mutex);
 		pthread_cond_wait(&games[gameIndex].g_cond, &games[gameIndex].g_mutex);
+		pthread_mutex_lock(&games[gameIndex].s_mutex);
 	}
 
 	if (DEBUG_SERVER)
@@ -204,7 +209,9 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		getStatus_aux(gameIndex, &(games[gameIndex].gameDeck), &(games[gameIndex].player2Deck), games[gameIndex].player2Stack, status);
 	}
 
+	pthread_cond_signal(&games[gameIndex].g_cond);
 	pthread_mutex_unlock(&games[gameIndex].g_mutex);
+	pthread_mutex_unlock(&games[gameIndex].s_mutex);
 
 	return SOAP_OK;
 }
@@ -228,7 +235,7 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 	}
 	else
 	{
-		allocDeck(playerDeck, DECK_SIZE);
+		clearDeck(playerDeck);
 		insertCard(playerDeck, getRandomCard(gameDeck));
 		insertCard(playerDeck, getRandomCard(gameDeck));
 		code = TURN_PLAY;
@@ -253,13 +260,13 @@ int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMess
 {
 	int player;
 
-	player = playerPos(games[gameIndex], playerName.msg);
 	playerName.msg[playerName.__size] = 0;
+	player = playerPos(games[gameIndex], playerName.msg);
 	allocClearBlock(soap, gameBlock);
 
 	if (player == ERROR_PLAYER_NOT_FOUND)
 	{
-		copyGameStatusStructure(gameBlock, "Player not found", NULL, ERROR_PLAYER_NOT_FOUND);
+		copyGameStatusStructure(gameBlock, "Player not found", &gameBlock->deck, ERROR_PLAYER_NOT_FOUND);
 		return SOAP_OK;
 	}
 	else if (player == player1)
@@ -308,13 +315,10 @@ void playerMove_aux(int code, int gameIndex, blackJackns__tDeck *gameDeck, black
 	{
 		code = TURN_WAIT;
 		strcpy(message, "Checking for the result...\n");
-		if (games[gameIndex].player1Deck.__size > 0 && games[gameIndex].player2Deck.__size > 0)
-		{
-			splitChip(games[gameIndex]);
-		}
+		splitChip(&games[gameIndex]);
+		games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
 	}
 	copyGameStatusStructure(playerBlock, message, playerDeck, code);
-	games[gameIndex].currentPlayer = calculateNextPlayer(games[gameIndex].currentPlayer);
 }
 
 void initGame(tGame *game)
@@ -334,7 +338,7 @@ void initGame(tGame *game)
 
 	// Game status variables
 	game->endOfGame = FALSE;
-	game->status = gameReady;
+	game->status = gameEmpty;
 	game->currentPlayer= rand() % 2;
 }
 
@@ -464,24 +468,26 @@ unsigned int calculatePoints(blackJackns__tDeck *deck)
 	return points;
 }
 
-void splitChip(tGame game)
+void splitChip(tGame *game)
 {
-	unsigned int p1Points = calculatePoints(&(game.player1Deck));
-	unsigned int p2Points = calculatePoints(&(game.player2Deck));
+	unsigned int p1Points = calculatePoints(&(game->player1Deck));
+	unsigned int p2Points = calculatePoints(&(game->player2Deck));
 
 	if (p1Points == 0 || p2Points == 0)
 		return;
 
 	if ((p1Points > 21 || p1Points < p2Points) && p2Points <= 21)
 	{
-		game.player1Stack -= DEFAULT_BET;
-		game.player2Stack += DEFAULT_BET;
+		game->player1Stack -= DEFAULT_BET;
+		game->player2Stack += DEFAULT_BET;
 	}
 	else if ((p2Points > 21 || p1Points > p2Points) && p1Points <= 21)
 	{
-		game.player1Stack += DEFAULT_BET;
-		game.player2Stack -= DEFAULT_BET;
+		game->player1Stack += DEFAULT_BET;
+		game->player2Stack -= DEFAULT_BET;
 	}
+	clearDeck(&(game->player1Deck));
+	clearDeck(&(game->player2Deck));
 }
 
 int playerExists(tGame game, char *playerName)

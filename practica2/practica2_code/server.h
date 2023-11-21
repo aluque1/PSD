@@ -13,7 +13,7 @@
 #define INITIAL_STACK 5 // TODO esto estaba a 1
 
 /** Default bet */
-#define DEFAULT_BET 1
+#define DEFAULT_BET 5
 
 /** Number of points to win the game */
 #define GOAL_GAME 21
@@ -46,11 +46,11 @@ typedef struct game
 {
 	tPlayer currentPlayer; /** Current player */
 
-	pthread_mutex_t g_mutex; /** Mutex to control access to the game */
-	pthread_cond_t g_cond;   /** Condition to control access to the game */
-
 	pthread_mutex_t s_mutex; /** Mutex to control access to the status and names*/
 	pthread_cond_t s_cond;   /** Condition to control access to the status and names*/
+
+	pthread_mutex_t g_mutex; /** Mutex to control access to the rest of game elements */
+	pthread_cond_t g_cond;   /** Condition to control access to the rest of game elements */
 
 	xsd__string player1Name;		/** Name of player 1 */
 	blackJackns__tDeck player1Deck; /** Player1's deck */
@@ -153,7 +153,7 @@ int playerExists(tGame game, char *playerName);
  *
  * @param game Game to be checked.
  */
-void splitChip(tGame game);
+void splitChip(tGame *game);
 
 /*
 

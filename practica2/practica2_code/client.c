@@ -65,11 +65,10 @@ int main(int argc, char **argv)
 	{
 		soap_call_blackJackns__getStatus(&soap, serverURL, "", gameId, playerName, &gameStatus);
 		printStatus(&gameStatus, DEBUG_CLIENT);
-		sleep(5);
+		if(gameStatus.code == TURN_WAIT) sleep(5);
 		while(gameStatus.code == TURN_PLAY)
 		{
-			readOption();
-			soap_call_blackJackns__playerMove(&soap, serverURL, "", gameId, playerName, playerMove, &gameStatus);		
+			soap_call_blackJackns__playerMove(&soap, serverURL, "", gameId, playerName, readOption(), &gameStatus);		
 			printStatus(&gameStatus, DEBUG_CLIENT);
 		}
 	}
