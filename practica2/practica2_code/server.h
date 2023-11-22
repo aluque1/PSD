@@ -155,6 +155,8 @@ int playerExists(tGame game, char *playerName);
  */
 void splitChip(tGame *game);
 
+static inline int gameEnded(tGame game);
+
 /*
 
 */

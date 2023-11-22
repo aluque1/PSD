@@ -170,6 +170,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		pthread_mutex_unlock(&games[gameIndex].s_mutex);
 		return SOAP_OK;
 	}
+	pthread_mutex_unlock(&games[gameIndex].s_mutex);
 
 	// Check if the player name already exists in the game
 	player = playerPos(games[gameIndex], playerName.msg);
@@ -180,11 +181,9 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 
 	// Check if it is the player's turn
 	pthread_mutex_lock(&games[gameIndex].g_mutex);
-	while ((player != games[gameIndex].currentPlayer))
+	while ((player != games[gameIndex].currentPlayer) && !gameEnded(games[gameIndex]))
 	{
-		pthread_mutex_unlock(&games[gameIndex].s_mutex);
 		pthread_cond_wait(&games[gameIndex].g_cond, &games[gameIndex].g_mutex);
-		pthread_mutex_lock(&games[gameIndex].s_mutex);
 	}
 
 	if (DEBUG_SERVER)
@@ -211,7 +210,6 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 
 	pthread_cond_signal(&games[gameIndex].g_cond);
 	pthread_mutex_unlock(&games[gameIndex].g_mutex);
-	pthread_mutex_unlock(&games[gameIndex].s_mutex);
 
 	return SOAP_OK;
 }
@@ -220,7 +218,7 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 	int code = 0;
 	char *message = malloc(STRING_LENGTH);
 
-	if (games[gameIndex].player1Stack == 0 || games[gameIndex].player2Stack == 0)
+	if (gameEnded(games[gameIndex]))
 	{
 		if (pStack == 0)
 		{
@@ -242,6 +240,11 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 		strcpy(message, "YOUR TURN\n");
 	}
 	copyGameStatusStructure(playerBlock, message, playerDeck, code);
+}
+
+static inline int gameEnded(tGame game)
+{
+	return (game.player1Stack == 0 || game.player2Stack == 0);
 }
 
 /*
