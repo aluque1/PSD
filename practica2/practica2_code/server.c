@@ -80,7 +80,7 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 	int gameFound = FALSE;
 	int availableGame = FALSE;
 	tPlayer player = player1;
-	
+
 	// Set \0 at the end of the string
 	playerName.msg[playerName.__size] = 0;
 
@@ -93,11 +93,12 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			// Check if the player name already exists in the game
 			if (!playerExists(games[gameIndex], playerName.msg))
 			{
-				gameFound = TRUE; break;
+				gameFound = TRUE;
+				break;
 			}
 		}
 		pthread_mutex_unlock(&games[gameIndex].s_mutex);
-	}while (gameIndex++ < MAX_GAMES && !gameFound);
+	} while (gameIndex++ < MAX_GAMES && !gameFound);
 	if (DEBUG_SERVER)
 		printf("gameIndex: %d\n", gameIndex);
 
@@ -213,6 +214,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 
 	return SOAP_OK;
 }
+
 void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDeck *playerDeck, unsigned int pStack, blackJackns__tBlock *playerBlock)
 {
 	int code = 0;
@@ -224,11 +226,13 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 		{
 			code = GAME_LOSE;
 			strcpy(message, "YOU LOSE\n");
+			games[gameIndex].endOfGame = TRUE;
 		}
 		else
 		{
 			code = GAME_WIN;
 			strcpy(message, "YOU WIN\n");
+			games[gameIndex].endOfGame = TRUE;
 		}
 	}
 	else
@@ -247,18 +251,6 @@ static inline int gameEnded(tGame game)
 	return (game.player1Stack == 0 || game.player2Stack == 0);
 }
 
-/*
-primero mira si hit o stand.
-si hit da carta y comprueba si se ha pasado de 21
-si no se pasa, manda turn play y sigue jugando.
-
-si se pasa o hace stand, comprueba si el otro ha jugado o no.
-si el otro tiene cartas(ha jugado), hace splitchip.
-si el otro no tiene cartas, manda turn wait.
-
-pasa turno
-
-*/
 int blackJackns__playerMove(struct soap *soap, int gameIndex, blackJackns__tMessage playerName, int code, blackJackns__tBlock *gameBlock)
 {
 	int player;
@@ -301,7 +293,7 @@ pasa turno
 */
 void playerMove_aux(int code, int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDeck *playerDeck, blackJackns__tBlock *playerBlock)
 {
-	char* message = malloc(STRING_LENGTH);
+	char *message = malloc(STRING_LENGTH);
 	int code_aux = 0;
 
 	if (code == PLAYER_HIT_CARD)
@@ -312,7 +304,7 @@ void playerMove_aux(int code, int gameIndex, blackJackns__tDeck *gameDeck, black
 			code = TURN_PLAY;
 			strcpy(message, "YOUR TURN\n");
 		}
-	} //te falta algo aqui? o ya solo falta lo de pintar en el cliente
+	} // te falta algo aqui? o ya solo falta lo de pintar en el cliente
 
 	if (calculatePoints(playerDeck) > 21 || code == PLAYER_STAND)
 	{
@@ -342,7 +334,7 @@ void initGame(tGame *game)
 	// Game status variables
 	game->endOfGame = FALSE;
 	game->status = gameEmpty;
-	game->currentPlayer= rand() % 2;
+	game->currentPlayer = rand() % 2;
 }
 
 void initServerStructures(struct soap *soap)
@@ -515,6 +507,7 @@ void *processRequest(void *soap)
 	printf("Processing a new request...\n");
 
 	soap_serve((struct soap *)soap);
+
 	soap_destroy((struct soap *)soap);
 	soap_end((struct soap *)soap);
 	soap_done((struct soap *)soap);

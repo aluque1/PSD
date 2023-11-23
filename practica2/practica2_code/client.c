@@ -72,9 +72,7 @@ int main(int argc, char **argv)
 			printStatus(&gameStatus, DEBUG_CLIENT);
 		}
 	}
-
-	printf("%s", gameStatus.msgStruct.msg);
-
+	
 	soap_destroy(&soap);
 	soap_end(&soap);
 	soap_done(&soap);
