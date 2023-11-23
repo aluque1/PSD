@@ -18,3 +18,6 @@ unsigned int readBet();
  * @return A number that represents the action taken by the player.
  */
 unsigned int readOption();
+
+
+char* getError(int code);

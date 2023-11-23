@@ -98,7 +98,7 @@ int blackJackns__register(struct soap *soap, blackJackns__tMessage playerName, i
 			}
 		}
 		pthread_mutex_unlock(&games[gameIndex].s_mutex);
-	} while (gameIndex++ < MAX_GAMES && !gameFound);
+	} while (++gameIndex < MAX_GAMES && !gameFound);
 	if (DEBUG_SERVER)
 		printf("gameIndex: %d\n", gameIndex);
 
@@ -165,7 +165,7 @@ int blackJackns__getStatus(struct soap *soap, int gameIndex, blackJackns__tMessa
 		printf("[GetStatus] Getting status of player [%s] in game [%d]\n", playerName.msg, gameIndex);
 
 	pthread_mutex_lock(&games[gameIndex].s_mutex);
-	if (games[gameIndex].status != gameReady)
+	if (games[gameIndex].status != gameReady && !gameEnded(games[gameIndex]))
 	{
 		copyGameStatusStructure(status, "Waiting for another player", &status->deck, TURN_WAIT);
 		pthread_mutex_unlock(&games[gameIndex].s_mutex);
@@ -226,14 +226,15 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 		{
 			code = GAME_LOSE;
 			strcpy(message, "YOU LOSE\n");
-			games[gameIndex].endOfGame = TRUE;
 		}
 		else
 		{
 			code = GAME_WIN;
 			strcpy(message, "YOU WIN\n");
-			games[gameIndex].endOfGame = TRUE;
+			
 		}
+		games[gameIndex].endOfGame = TRUE;
+		games[gameIndex].status--;
 	}
 	else
 	{
@@ -244,6 +245,10 @@ void getStatus_aux(int gameIndex, blackJackns__tDeck *gameDeck, blackJackns__tDe
 		strcpy(message, "YOUR TURN\n");
 	}
 	copyGameStatusStructure(playerBlock, message, playerDeck, code);
+	if(gameEnded(games[gameIndex]) && games[gameIndex].status == gameEmpty)
+	{
+		initGame(&(games[gameIndex]));
+	}
 }
 
 static inline int gameEnded(tGame game)

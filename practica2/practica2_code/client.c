@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 			if (resCode >= 0)
 				printf("Player registered in game : %d\n", gameId);
 			else
-				printf("Player not registered [ERR:%d]\n", gameId);
+				printf("Player not registered [ERR: %s]\n", getError(resCode));
 		}
 	} while (resCode < 0);
 
@@ -137,4 +137,19 @@ unsigned int readOption()
 	} while ((bet != PLAYER_HIT_CARD) && (bet != PLAYER_STAND));
 
 	return bet;
+}
+
+char* getError(int code)
+{
+	switch (code)
+	{
+	case ERROR_NAME_REPEATED:
+		return "Name repeated";
+	break;
+	case ERROR_SERVER_FULL:
+		return "Game full";
+	break;
+	default:
+		return "Unknown error";
+	}
 }
