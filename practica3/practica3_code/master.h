@@ -10,4 +10,4 @@
 // Number of iterations between two possible cataclysms
 #define ITER_CATACLYSM 5
 
-
+void masterFunction(SDL_Window* window, SDL_Renderer* renderer, int nproc, int worldWidth, int worldHeight, int totalIterations, int autoMode, char* outputFile, int distModeStatic, int grainSize);

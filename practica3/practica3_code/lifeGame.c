@@ -119,6 +119,9 @@ int main(int argc, char* argv[]){
 				showError( "Window could not be created!\n" );
 				exit (0);
 			}
+
+			int c = 1;
+			while (c){}
 			
 			// Create a renderer
 			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -141,7 +144,10 @@ int main(int argc, char* argv[]){
 			startTime = MPI_Wtime();
 			
 			// TODO: Invoke the master subprogram
+
+			masterFunction(window, renderer, size, worldWidth, worldHeight, totalIterations, autoMode, outputFile, distModeStatic, grainSize);
 			
+
 			
 			// Set timer
 			endTime = MPI_Wtime();
@@ -151,6 +157,7 @@ int main(int argc, char* argv[]){
 		
 		// Workers
 		else
+			workerFunction();
 			// TODO: Invoke the worker subprogram
 
     return 0;
