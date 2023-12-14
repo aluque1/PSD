@@ -11,3 +11,9 @@
 #define ITER_CATACLYSM 5
 
 void masterFunction(SDL_Window* window, SDL_Renderer* renderer, int nproc, int worldWidth, int worldHeight, int totalIterations, int autoMode, char* outputFile, int distModeStatic, int grainSize);
+
+void computeNextWorldStatic(unsigned short* worldA, unsigned short* worldB, SDL_Renderer* renderer, int worldWidth, int worldHeight, int nproc);
+void computeNextWorldDynamic(unsigned short* worldA, unsigned short* worldB, SDL_Renderer* renderer, int worldWidth, int worldHeight, int nproc, int grainSize);
+void swapWorlds(unsigned short** worldA, unsigned short** worldB);
+unsigned short* getUpperRow(unsigned short* world, int currRow, int worldWidth, int worldHeight);
+unsigned short* getLowerRow(unsigned short* world, int currRow, int worldWidth, int worldHeight);

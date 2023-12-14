@@ -4,4 +4,5 @@
 // Enables/Disables the log messages from worker processes
 #define DEBUG_WORKER 1
 
-void workerFunction();
+void workerFunction(int worldWidth);
+

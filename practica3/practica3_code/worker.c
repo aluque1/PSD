@@ -1,5 +1,47 @@
 #include "worker.h"
 
-void workerFunction(){
+void workerFunction(int worldWidth)
+{
+    int worldHeight;
+    unsigned short nRows, index, currRow = 0;
+    unsigned short* worldA;
+    unsigned short* worldB;
 
+    
+    // Recibo numero filas (1st iteration)
+    MPI_Recv(&nRows, 1, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    worldHeight = nRows + 2; // +2 por las filas de arriba y abajo
+
+    // Reservo memoria
+    worldA = (unsigned short*)malloc(worldHeight * worldWidth * sizeof(unsigned short));
+    worldB = (unsigned short*)malloc(worldHeight * worldWidth * sizeof(unsigned short));
+    do
+    {
+        // Recivo indice
+        MPI_Recv(&index, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        // Recibo mundo
+        MPI_Recv(worldA, worldWidth, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        currRow++;
+        MPI_Recv(worldA + (nRows * worldWidth), nRows * worldWidth, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        currRow += nRows;
+        MPI_Recv(worldA + (currRow * worldWidth), worldWidth, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        currRow = 0;
+
+        // Computo
+        updateWorld(worldA, worldB, worldWidth, worldHeight);
+
+        // Envio numero filas
+        MPI_Send(&nRows, 1, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD);
+
+        // Envio indice
+        MPI_Send(&index, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
+
+        // Envio mundo
+        MPI_Send(worldB, worldWidth, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD);
+
+        // Recivo numero filas
+        MPI_Recv(&nRows, 1, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    } while (nRows > 0);
 }
