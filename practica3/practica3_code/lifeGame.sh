@@ -1,1 +1,1 @@
-mpiexec -np 4 lifeGame 100 100 120 auto imagenFinal static
+mpiexec -np 3 lifeGame 10 10 20 auto imagenFinal static

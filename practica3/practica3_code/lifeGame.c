@@ -57,18 +57,18 @@ int main(int argc, char* argv[]){
 		// Get rank and size
 		MPI_Comm_size(MPI_COMM_WORLD, &size);
 		MPI_Comm_rank( MPI_COMM_WORLD, &rank);
+
+		// Check the number of parameters
+		if ((argc < 7) || (argc > 8)){
+			wrongUsage (rank, "Wrong number of parameters!\n", argv[0]);
+			exit(0);
+		}
 		
 		// Check the number of processes
 		if (size < 3){
 			printf ("The number of processes must be > 2\n");
 			MPI_Finalize();		
 			exit(0);			
-		}				
-		
-		// Check the number of parameters
-		if ((argc < 7) || (argc > 8)){
-			wrongUsage (rank, "Wrong number of parameters!\n", argv[0]);
-			exit(0);
 		}
 		
 		// Read world's width (common for master and workers)
@@ -95,7 +95,12 @@ int main(int argc, char* argv[]){
 			grainSize = atoi (argv[7]);				
 		}
 		else
-			wrongUsage (rank, "Wrong distribution mode, please select [static|dynamic grainSize]\n", argv[0]);	
+			wrongUsage (rank, "Wrong distribution mode, please select [static|dynamic grainSize]\n", argv[0]);
+
+		//Check relation bewteen grain size and number of processes
+		if (!distModeStatic && (grainSize * size > worldHeight)){
+			wrongUsage (rank, "The grain size is too big for the number of processes\n", argv[0]);			
+		}
 		
 		// Randomize the generator
 		srand (SEED);

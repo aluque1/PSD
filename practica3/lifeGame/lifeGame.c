@@ -185,6 +185,10 @@ int main(int argc, char* argv[]){
 		gettimeofday(&totalEnd, NULL);
 		printf ("Total execution time:%f seconds\n", (double) ((totalEnd.tv_sec - totalInit.tv_sec) * 1000000 + totalEnd.tv_usec - totalInit.tv_usec)/1000000.0);
 			
+		// Wait for user's input
+		printf ("Press Enter to continue...");
+		ch = getchar();
+		
 		// Save file?
 		if (outputFile != NULL)			
 			saveImage (renderer, outputFile,screenWidth, screenHeight);				

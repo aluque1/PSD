@@ -1,5 +1,7 @@
 #include "worker.h"
 
+void printDebugWorld(unsigned short* world, char worldName, int index, int worldWidth, int worldHeight);
+
 void workerFunction(int worldWidth)
 {
     int worldHeight;
@@ -32,35 +34,13 @@ void workerFunction(int worldWidth)
         currRow = 0;
 
         if(DEBUG_WORKER)
-        {
-            printf("Worker index: %d. WorldA\n", index);
-            for (int i = 0; i < worldHeight; i++)
-            {
-                for (int j = 0; j < worldWidth; j++)
-                {
-                    printf("%d ", worldA[i * worldWidth + j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
+            printDebugWorld(worldA, 'A', index, worldWidth, worldHeight);
 
         // Computo
         updateWorld(worldA, worldB, worldWidth, worldHeight);
 
         if (DEBUG_WORKER)
-        {
-            printf("Worker index: %d. WorldB\n", index);
-            for (int i = 0; i < worldHeight; i++)
-            {
-                for (int j = 0; j < worldWidth; j++)
-                {
-                    printf("%d ", worldB[i * worldWidth + j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
+            printDebugWorld(worldB, 'B', index, worldWidth, worldHeight);
 
         // Envio numero filas
         MPI_Send(&nRows, 1, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD);
@@ -74,4 +54,18 @@ void workerFunction(int worldWidth)
         // Recivo numero filas
         MPI_Recv(&nRows, 1, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     } while (nRows > 0);
+}
+
+void printDebugWorld(unsigned short* world, char worldName, int index, int worldWidth, int worldHeight)
+{
+    printf("Worker(%d). World%c\n", index, worldName);
+    for (int i = 0; i < worldHeight; i++)
+    {
+        for (int j = 0; j < worldWidth; j++)
+        {
+            printf("%d ", world[i * worldWidth + j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
