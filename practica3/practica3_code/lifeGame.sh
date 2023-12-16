@@ -1,1 +1,1 @@
-mpiexec -np 3 lifeGame 10 10 20 auto imagenFinal static
+mpiexec -np 8 lifeGame 100 100 20 auto imagenFinal dynamic 1

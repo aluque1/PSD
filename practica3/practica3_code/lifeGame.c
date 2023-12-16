@@ -98,7 +98,7 @@ int main(int argc, char* argv[]){
 			wrongUsage (rank, "Wrong distribution mode, please select [static|dynamic grainSize]\n", argv[0]);
 
 		//Check relation bewteen grain size and number of processes
-		if (!distModeStatic && (grainSize * size > worldHeight)){
+		if (!distModeStatic && (grainSize * (size - 1) > worldHeight)){
 			wrongUsage (rank, "The grain size is too big for the number of processes\n", argv[0]);			
 		}
 		
@@ -155,9 +155,11 @@ int main(int argc, char* argv[]){
 			endTime = MPI_Wtime();
 			printf ("Total execution time:%f seconds\n", endTime-startTime);
 
-			// Game over
-    		printf("Game over! Press any key to exit...\n");
-    		getchar();
+			if(DEBUG_MASTER)
+			{
+				printf("Press any key to exit...\n");
+				getchar();
+			}
 			
 		}
 		

@@ -161,7 +161,7 @@ void computeNextWorldDynamic(unsigned short *worldA, unsigned short *worldB, SDL
         // Envio mundo
         MPI_Send(getPreviousRow(worldA, index, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
         MPI_Send(worldA + (index * worldWidth), nRows * worldWidth, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
-        MPI_Send(getNextRow(worldA, index, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
+        MPI_Send(getNextRow(worldA, index + nRows, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
     }
 
     MPI_Status status;
@@ -200,7 +200,7 @@ void computeNextWorldDynamic(unsigned short *worldA, unsigned short *worldB, SDL
             // Envio mundo
             MPI_Send(getPreviousRow(worldA, rowsSent, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD);
             MPI_Send(worldA + (rowsSent * worldWidth), nRows * worldWidth, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD);
-            MPI_Send(getNextRow(worldA, rowsSent, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD);
+            MPI_Send(getNextRow(worldA, rowsSent + nRows, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD);
 
             rowsSent += nRows;
         }
