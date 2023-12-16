@@ -94,12 +94,29 @@ void clearWorld (unsigned short *w,
  */
 void calculateLonelyCell ();
 
+/**
+ * 
+ * Checks for every cell in the current world if it will be alive or dead in the next iteration.
+ * 
+ * @param currentWorld World to be checked.
+ * @param newWorld World where the new state of the cells will be stored.
+ * @param worldWidth Width of the world (in number of cells).
+ * @param worldHeight Height of the world (in number of cells).
+ * 
+ */
 void updateWorld (unsigned short *currentWorld, unsigned short *newWorld, int worldWidth, int worldHeight);
-void updateCell (tCoordinate *cell, 
-				unsigned short* currentWorld,
-				unsigned short* newWorld,
-				int worldWidth, 
-				int worldHeight);
+
+/**
+ * 
+ * Sets the state of a cell in the next iteration.
+ * 
+ * @param cell Cell to be checked.
+ * @param currentWorld World to be checked.
+ * @param newWorld World where the new state of the cells will be stored.
+ * @param worldWidth Width of the world (in number of cells).
+ * 
+ */
+void updateCell (tCoordinate *cell, unsigned short* currentWorld, unsigned short* newWorld, int worldWidth);
 
 
 #endif

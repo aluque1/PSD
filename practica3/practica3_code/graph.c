@@ -40,8 +40,7 @@ void drawWorld (unsigned short *currentWorld,
 				SDL_Renderer* renderer,
 				int firstRow,
 				int lastRow,
-				int worldWidth, 
-				int worldHeight){
+				int worldWidth){
 	
 	tCoordinate cell;
 

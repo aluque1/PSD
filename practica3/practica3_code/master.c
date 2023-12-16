@@ -22,33 +22,26 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
     // Clear render with black color and draw iteration 0
     SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(renderer);
-    drawWorld(worldB, worldA, renderer, 0, worldHeight, worldWidth, worldHeight);
+    drawWorld(worldB, worldA, renderer, 0, worldHeight, worldWidth);
     SDL_RenderPresent(renderer);
     SDL_UpdateWindowSurface(window);
 
     // Read event
     if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-    {
         isquit = 1;
-    }
 
     // Main loop
     for (int iteration = 1; iteration <= totalIterations && !isquit; iteration++)
     {
-        // Compute next world
-
         // Clear the world
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
         SDL_RenderClear(renderer);
 
+        // Compute next world
         if (distModeStatic)
-        {
             computeNextWorldStatic(worldA, worldB, renderer, worldWidth, worldHeight, nproc);
-        }
         else
-        {
             computeNextWorldDynamic(worldA, worldB, renderer, worldWidth, worldHeight, nproc, grainSize);
-        }
 
         // Draw next world
         SDL_RenderPresent(renderer);
@@ -56,12 +49,13 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
 
         // Read event
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-        {
             isquit = 1;
-        }
 
         // Swap worlds
         swapWorlds(&worldA, &worldB);
+
+        // Clear world B
+        clearWorld(worldB, worldWidth, worldHeight);
 
         // Wait for user input
         if (!autoMode)
@@ -69,21 +63,22 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
             printf("Press any key to continue or 'q' to exit...\n");
             ch = getchar();
             if (ch == 'q')
-            {
                 isquit = 1;
-            }
         }
+    }
+
+    // Envio a cada proceso de fin
+    unsigned short nRows = 0;
+    for (int i = 1; i < nproc; i++)
+    {
+        MPI_Send(&nRows, 1, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
     }
 
     // Save the last world
     if (outputFile != NULL)
     {
-        saveImage(renderer, outputFile, worldWidth, worldHeight);
+        //saveImage(renderer, outputFile, worldWidth, worldHeight); //TODO da error de malloc
     }
-
-    // Game over
-    printf("Game over! Press any key to exit...\n");
-    getchar();
 
     // Free memory
     free(worldA);
@@ -94,25 +89,22 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
 
     // Quit SDL subsystems
     SDL_Quit();
-
-    // Exit
-    exit(EXIT_SUCCESS);
 }
 
 void computeNextWorldStatic(unsigned short *worldA, unsigned short *worldB, SDL_Renderer *renderer, int worldWidth, int worldHeight, int nproc)
 {
-    unsigned short nRows = worldHeight / nproc;
-    short index = 0;
+    unsigned short nRows = worldHeight / (nproc - 1);
+    unsigned short index = 0;
 
     // Envio a cada proceso
-    for (int i = 1; i <= nproc; i++, index += nRows)
+    for (int i = 1; i < nproc; i++, index += nRows)
     {
-        if (i == nproc)
-            nRows += worldHeight % nproc;
+        if (i == (nproc - 1))
+            nRows += worldHeight % (nproc - 1);
         // Envio numero filas
         MPI_Send(&nRows, 1, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
         // Envio indice
-        MPI_Send(&index, 1, MPI_SHORT, i, 0, MPI_COMM_WORLD);
+        MPI_Send(&index, 1, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
         // Envio mundo
         MPI_Send(getUpperRow(worldA, index, worldWidth, worldHeight), worldWidth, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
         MPI_Send(worldA + (index * worldWidth), nRows * worldWidth, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
@@ -122,27 +114,44 @@ void computeNextWorldStatic(unsigned short *worldA, unsigned short *worldB, SDL_
     MPI_Status status;
     int rank;
     // Recibo de cada proceso
-    for (int i = 1; i <= nproc; i++, index += nRows)
+    for (int i = 1; i < nproc; i++)
     {
         // Recivo numero filas
-        MPI_Recv(&nRows, 1, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD, &status);
+        MPI_Recv(&nRows, 1, MPI_UNSIGNED_SHORT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
         rank = status.MPI_SOURCE;
 
         // Recivo indice
-        MPI_Recv(&index, 1, MPI_SHORT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&index, 1, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Recivo el mundo
         MPI_Recv(worldB + (index * worldWidth), nRows * worldWidth, MPI_UNSIGNED_SHORT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Pinto el mundo
-        drawWorld(worldA, worldB, renderer, index, index + nRows, worldWidth, worldHeight);
+        drawWorld(worldA, worldB, renderer, index, index + nRows, worldWidth);
     }
 
-    // Envio a cada proceso de fin
-    nRows = 0;
-    for (int i = 1; i <= nproc; i++)
+    if (DEBUG_MASTER)
     {
-        MPI_Send(&nRows, 1, MPI_SHORT, i, 0, MPI_COMM_WORLD);
+        printf("Master. WorldA\n");
+        for (int i = 0; i < worldHeight; i++)
+        {
+            for (int j = 0; j < worldWidth; j++)
+            {
+                printf("%d ", worldA[i * worldWidth + j]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+
+        printf("Master. WorldB\n");
+        for (int i = 0; i < worldHeight; i++)
+        {
+            for (int j = 0; j < worldWidth; j++)
+            {
+                printf("%d ", worldB[i * worldWidth + j]);
+            }
+            printf("\n");
+        }
     }
 }
 
@@ -153,9 +162,9 @@ void computeNextWorldDynamic(unsigned short *worldA, unsigned short *worldB, SDL
 
 void swapWorlds(unsigned short **worldA, unsigned short **worldB)
 {
-    unsigned short *temp = *worldA;
+    unsigned short *aux = *worldA;
     *worldA = *worldB;
-    *worldB = temp;
+    *worldB = aux;
 }
 
 unsigned short *getUpperRow(unsigned short *world, int currRow, int worldWidth, int worldHeight)

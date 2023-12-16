@@ -139,25 +139,27 @@ int main(int argc, char* argv[]){
 			
 			// Set timer
 			startTime = MPI_Wtime();
-			
-			// TODO: Invoke the master subprogram
+
 			printf("Pulsa cualquir tecla para comenzar\n");
 			getchar();
-
-			masterFunction(window, renderer, size, worldWidth, worldHeight, totalIterations, autoMode, outputFile, distModeStatic, grainSize);
 			
-
+			//Invoke the master subprogram
+			masterFunction(window, renderer, size, worldWidth, worldHeight, totalIterations, autoMode, outputFile, distModeStatic, grainSize);
 			
 			// Set timer
 			endTime = MPI_Wtime();
 			printf ("Total execution time:%f seconds\n", endTime-startTime);
+
+			// Game over
+    		printf("Game over! Press any key to exit...\n");
+    		getchar();
 			
 		}
 		
 		// Workers
 		else
+			//Invoke the worker subprogram
 			workerFunction(worldWidth);
-			// TODO: Invoke the worker subprogram
 
     return 0;
 }
