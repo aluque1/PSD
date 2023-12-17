@@ -1,8 +1,8 @@
 #include "master.h"
 
-void printDebugWorldMaster(unsigned short* world, char worldName, int worldWidth, int worldHeight);
+void printDebugWorldMaster(unsigned short *world, char worldName, int worldWidth, int worldHeight);
 
-void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int worldWidth, int worldHeight, int totalIterations, int autoMode, char *outputFile, int distModeStatic, int grainSize)
+void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int worldWidth, int worldHeight, int totalIterations, int autoMode, int distModeStatic, int grainSize)
 {
     // User's input and events
     char ch;
@@ -76,25 +76,15 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
         MPI_Send(&nRows, 1, MPI_UNSIGNED_SHORT, i, 0, MPI_COMM_WORLD);
     }
 
-    // Save the last world
-    if (outputFile != NULL)
-    {
-        //saveImage(renderer, outputFile, worldWidth, worldHeight); //TODO da error de malloc
-    }
-
-    // Game over
-    printf("Game over! Press any key to exit...\n");
-    getchar();
-
     // Free memory
     free(worldA);
     free(worldB);
 
-    // Destroy window
-    SDL_DestroyWindow(window);
-
-    // Quit SDL subsystems
-    SDL_Quit();
+    if (DEBUG_MASTER)
+    {
+        printf("Press any key to exit...\n");
+        getchar();
+    }
 }
 
 void computeNextWorldStatic(unsigned short *worldA, unsigned short *worldB, SDL_Renderer *renderer, int worldWidth, int worldHeight, int nproc)
@@ -141,7 +131,6 @@ void computeNextWorldStatic(unsigned short *worldA, unsigned short *worldB, SDL_
         printDebugWorldMaster(worldA, 'A', worldWidth, worldHeight);
         printDebugWorldMaster(worldB, 'B', worldWidth, worldHeight);
     }
-        
 }
 
 void computeNextWorldDynamic(unsigned short *worldA, unsigned short *worldB, SDL_Renderer *renderer, int worldWidth, int worldHeight, int nproc, int grainSize)
@@ -151,7 +140,7 @@ void computeNextWorldDynamic(unsigned short *worldA, unsigned short *worldB, SDL
     unsigned short rowsRecv = 0;
     unsigned short index = 0;
 
-    //Reparto inicial
+    // Reparto inicial
     for (int i = 1; i < nproc; i++, index += nRows, rowsSent += nRows)
     {
         // Envio numero filas
@@ -231,7 +220,7 @@ unsigned short *getNextRow(unsigned short *world, int currRow, int worldWidth, i
     return (currRow == worldHeight) ? world : world + (currRow * worldWidth);
 }
 
-void printDebugWorldMaster(unsigned short* world, char worldName, int worldWidth, int worldHeight)
+void printDebugWorldMaster(unsigned short *world, char worldName, int worldWidth, int worldHeight)
 {
     printf("Master. World%c\n", worldName);
     for (int i = 0; i < worldHeight; i++)
