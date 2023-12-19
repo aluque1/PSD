@@ -151,8 +151,11 @@ int main(int argc, char *argv[])
 		else
 			printf(" - [%d rows]\n", grainSize);
 
-		printf("Pulsa cualquir tecla para comenzar\n");
-		getchar();
+		if (DEBUG_MASTER)
+		{
+			printf("Pulsa cualquir tecla para comenzar\n");
+			getchar();
+		}
 
 		// Set timer
 		startTime = MPI_Wtime();

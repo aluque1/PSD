@@ -13,6 +13,9 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
     unsigned short *worldA = malloc(worldWidth * worldHeight * sizeof(unsigned short));
     unsigned short *worldB = malloc(worldWidth * worldHeight * sizeof(unsigned short));
 
+    // Iterations without cataclysm
+    unsigned short itersNoCat = 0;
+
     // Initialize the world
     clearWorld(worldA, worldWidth, worldHeight);
     clearWorld(worldB, worldWidth, worldHeight);
@@ -47,6 +50,17 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
         // Clear the world
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
         SDL_RenderClear(renderer);
+
+        if ((itersNoCat > ITER_CATACLYSM) && (rand() % 100 < PROB_CATACLYSM))
+        {
+            if(DEBUG_MASTER) printf("Cataclysm!\n");
+            itersNoCat = 0;
+            cataclysm(worldA, worldWidth, worldHeight);
+        }
+        else
+        {
+            itersNoCat++;
+        }
 
         // Compute next world
         if (distModeStatic)
@@ -200,6 +214,16 @@ void computeNextWorldDynamic(unsigned short *worldA, unsigned short *worldB, SDL
     {
         printDebugWorldMaster(worldA, 'A', worldWidth, worldHeight);
         printDebugWorldMaster(worldB, 'B', worldWidth, worldHeight);
+    }
+}
+
+
+void cataclysm(unsigned short *world, int worldWidth, int worldHeight)
+{
+    for (int i = 0; i < worldHeight; i++)
+    {
+        world[i * worldWidth] = CELL_CATACLYSM;
+        world[i * worldWidth + worldWidth - 1] = CELL_CATACLYSM;
     }
 }
 

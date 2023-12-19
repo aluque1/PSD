@@ -1,1 +1,1 @@
-mpiexec -np 5 lifeGame 100 100 20 auto imagenFinal.bmp dynamic 10
+mpiexec -np 5 lifeGame 10 10 20 step imagenFinal.bmp dynamic 1
