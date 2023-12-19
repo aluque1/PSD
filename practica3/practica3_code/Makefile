@@ -1,5 +1,7 @@
 CC = mpicc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g #-fsanitize=address
+
+#si uso threads -fsanitize=thread
 
 # Opciones de enlazado
 LDFLAGS = -lSDL2

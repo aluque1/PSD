@@ -54,6 +54,9 @@ void workerFunction(int worldWidth)
         // Recivo numero filas
         MPI_Recv(&nRows, 1, MPI_UNSIGNED_SHORT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     } while (nRows > 0);
+
+    free(worldA);
+    free(worldB);
 }
 
 void printDebugWorld(unsigned short* world, char worldName, int index, int worldWidth, int worldHeight)
