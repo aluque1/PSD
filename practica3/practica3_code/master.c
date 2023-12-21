@@ -36,7 +36,7 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
         isquit = 1;
 
     // Main loop
-    for (int iteration = 1; iteration <= totalIterations && !isquit; iteration++)
+    for (int iteration = 1; iteration <= totalIterations && !isquit; iteration++, itersNoCat++)
     {
         // Wait for user input
         if (!autoMode)
@@ -56,10 +56,6 @@ void masterFunction(SDL_Window *window, SDL_Renderer *renderer, int nproc, int w
             if(DEBUG_MASTER) printf("Cataclysm!\n");
             itersNoCat = 0;
             cataclysm(worldA, worldWidth, worldHeight);
-        }
-        else
-        {
-            itersNoCat++;
         }
 
         // Compute next world
