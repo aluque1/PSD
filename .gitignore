@@ -87,3 +87,6 @@ soapServerLib.c
 *.xsd
 *.wsdl
 *.nsmap
+
+# apuntes/ folder
+apuntes/
